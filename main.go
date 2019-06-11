@@ -18,11 +18,11 @@ import (
 	"bytes"
 	"encoding/binary"
 	"log"
-	"unsafe"
 	"os"
 	"os/signal"
 	"os/user"
 	"strconv"
+	"unsafe"
 
 	bpf "github.com/iovisor/gobpf/bcc"
 	"github.com/p-/socket-connect-bpf/conv"
@@ -71,12 +71,11 @@ int security_socket_connect_entry(struct pt_regs *ctx, struct socket *sock, stru
 
 		struct sockaddr_in *addr2 = (struct sockaddr_in *)address;
 		
-		//bpf_probe_read(&data4.daddr, sizeof(data4.daddr),
-			//(void *)((long)addr2->sin_addr.s_addr));
+		bpf_probe_read(&data4.daddr, sizeof(data4.daddr), &addr2->sin_addr.s_addr);
 			
-		// data4.dport = ntohs(addr2->sin_port);
-		//bpf_probe_read(&data4.dport, sizeof(data4.dport),
-			//(void *)((long) addr2->sin_port));
+		unsigned short sin_port = 0;
+		bpf_probe_read(&sin_port, sizeof(sin_port), &addr2->sin_port);
+		data4.dport = ntohs(sin_port);
 
 		data4.af = address_family;
 
@@ -103,7 +102,7 @@ func runKprobes() {
 	if err != nil {
 		log.Fatal("LoadKprobe failed!", err)
 	}
-	
+
 	err = m.AttachKprobe("security_socket_connect", security_socket_connect_entry, -1)
 
 	table4 := bpf.NewTable(m.TableId("ipv4_events"), m)
@@ -138,8 +137,8 @@ func setupWorkers() {
 	go runKprobes()
 }
 
-func printIp4Event(event* Ip4Event) {
-	log.Print(event);
+func printIp4Event(event *Ip4Event) {
+	log.Print(event)
 	task := (*C.char)(unsafe.Pointer(&event.Task))
 	log.Printf("Pid: %d, Task: %s", event.Pid, C.GoString(task))
 
@@ -156,11 +155,11 @@ func printIp4Event(event* Ip4Event) {
 }
 
 type Ip4Event struct {
-    TsUs uint64
-	Pid uint32
-	Uid uint32
+	TsUs  uint64
+	Pid   uint32
+	Uid   uint32
 	Daddr uint32
 	Dport uint16
-	Af uint32
-	Task [16]byte
+	Af    uint32
+	Task  [16]byte
 }
