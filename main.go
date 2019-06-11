@@ -69,13 +69,13 @@ int security_socket_connect_entry(struct pt_regs *ctx, struct socket *sock, stru
         data4.uid = uid;
         data4.ts_us = bpf_ktime_get_ns() / 1000;
 
-		struct sockaddr_in *addr2 = (struct sockaddr_in *)address;
+		struct sockaddr_in *daddr = (struct sockaddr_in *)address;
 		
-		bpf_probe_read(&data4.daddr, sizeof(data4.daddr), &addr2->sin_addr.s_addr);
+		bpf_probe_read(&data4.daddr, sizeof(data4.daddr), &daddr->sin_addr.s_addr);
 			
-		unsigned short sin_port = 0;
-		bpf_probe_read(&sin_port, sizeof(sin_port), &addr2->sin_port);
-		data4.dport = ntohs(sin_port);
+		unsigned short dport = 0;
+		bpf_probe_read(&dport, sizeof(dport), &daddr->sin_port);
+		data4.dport = ntohs(dport);
 
 		data4.af = address_family;
 
@@ -98,12 +98,12 @@ func main() {
 func runKprobes() {
 	m := bpf.NewModule(src, []string{})
 	defer m.Close()
-	security_socket_connect_entry, err := m.LoadKprobe("security_socket_connect_entry")
+	securitySocketConnectEntry, err := m.LoadKprobe("security_socket_connect_entry")
 	if err != nil {
 		log.Fatal("LoadKprobe failed!", err)
 	}
 
-	err = m.AttachKprobe("security_socket_connect", security_socket_connect_entry, -1)
+	err = m.AttachKprobe("security_socket_connect", securitySocketConnectEntry, -1)
 
 	table4 := bpf.NewTable(m.TableId("ipv4_events"), m)
 	channel4 := make(chan []byte)
@@ -117,10 +117,10 @@ func runKprobes() {
 
 	go (func() {
 		for {
-			var event Ip4Event
+			var event IP4Event
 			data := <-channel4
 			binary.Read(bytes.NewBuffer(data), binary.LittleEndian, &event)
-			printIp4Event(&event)
+			printIP4Event(&event)
 		}
 	})()
 
@@ -137,27 +137,30 @@ func setupWorkers() {
 	go runKprobes()
 }
 
-func printIp4Event(event *Ip4Event) {
+func printIP4Event(event *IP4Event) {
 	log.Print(event)
 	task := (*C.char)(unsafe.Pointer(&event.Task))
 	log.Printf("Pid: %d, Task: %s", event.Pid, C.GoString(task))
 
-	user, err := user.LookupId(strconv.Itoa(int(event.Uid)))
+	user, err := user.LookupId(strconv.Itoa(int(event.UID)))
 	if err != nil {
-		log.Printf("Could not lookup user with id: %d", event.Uid)
+		log.Printf("Could not lookup user with id: %d", event.UID)
 	} else {
-		log.Printf("User: %d (%s)", event.Uid, user.Username)
+		log.Printf("User: %d (%s)", event.UID, user.Username)
 	}
 
-	destIp := conv.ToIP(event.Daddr)
-	log.Printf("Destination Address: %s:%d", destIp, event.Dport)
+	destIP := conv.ToIP(event.Daddr)
+	log.Printf("Destination Address: %s:%d", destIP, event.Dport)
 	log.Print("----")
 }
 
-type Ip4Event struct {
+/*
+ * IP4Event is an event received from the eBPF program
+ */
+type IP4Event struct {
 	TsUs  uint64
 	Pid   uint32
-	Uid   uint32
+	UID   uint32
 	Daddr uint32
 	Dport uint16
 	Af    uint32
