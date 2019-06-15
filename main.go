@@ -36,6 +36,7 @@ const src string = `
 #include <net/sock.h>
 #include <linux/socket.h>
 #include <linux/in.h>
+#include <linux/in6.h>
 #include <linux/ip.h>
 #include <bcc/proto.h>
 
@@ -49,6 +50,17 @@ struct ipv4_data_t {
     char task[TASK_COMM_LEN];
 } __attribute__((packed));
 BPF_PERF_OUTPUT(ipv4_events);
+
+struct ipv6_data_t {
+    u64 ts_us;
+    u32 pid;
+    u32 uid;
+    unsigned __int128 daddr;
+	u16 dport;
+	u32 af;
+    char task[TASK_COMM_LEN];
+} __attribute__((packed));
+BPF_PERF_OUTPUT(ipv6_events);
 
 int security_socket_connect_entry(struct pt_regs *ctx, struct socket *sock, struct sockaddr *address, int addrlen)
 {
@@ -65,24 +77,38 @@ int security_socket_connect_entry(struct pt_regs *ctx, struct socket *sock, stru
 
 	u32 address_family = address->sa_family;
     if (address_family == AF_INET) {
-        struct ipv4_data_t data4 = {.pid = pid};
-        data4.uid = uid;
+        struct ipv4_data_t data4 = {.pid = pid, .uid = uid};
         data4.ts_us = bpf_ktime_get_ns() / 1000;
 
 		struct sockaddr_in *daddr = (struct sockaddr_in *)address;
 		
 		bpf_probe_read(&data4.daddr, sizeof(data4.daddr), &daddr->sin_addr.s_addr);
 			
-		unsigned short dport = 0;
+		u16 dport = 0;
 		bpf_probe_read(&dport, sizeof(dport), &daddr->sin_port);
 		data4.dport = ntohs(dport);
 
 		data4.af = address_family;
 
-		// https://stackoverflow.com/questions/32624847/what-is-the-purpose-of-the-sa-data-field-in-a-sockaddr
-		
 		bpf_get_current_comm(&data4.task, sizeof(data4.task));
-        ipv4_events.perf_submit(ctx, &data4, sizeof(data4));
+		ipv4_events.perf_submit(ctx, &data4, sizeof(data4));
+		
+    } else if (address_family == AF_INET6) {
+        struct ipv6_data_t data6 = {.pid = pid, .uid = uid};
+		data6.ts_us = bpf_ktime_get_ns() / 1000;
+		
+		struct sockaddr_in6 *daddr6 = (struct sockaddr_in6 *)address;
+		
+		bpf_probe_read(&data6.daddr, sizeof(data6.daddr), &daddr6->sin6_addr.in6_u.u6_addr32);
+
+		u16 dport6 = 0;
+		bpf_probe_read(&dport6, sizeof(dport6), &daddr6->sin6_port);
+		data6.dport = ntohs(dport6);
+
+		data6.af = address_family;
+
+        bpf_get_current_comm(&data6.task, sizeof(data6.task));
+        ipv6_events.perf_submit(ctx, &data6, sizeof(data6));
     }
 
     return 0;
@@ -112,6 +138,13 @@ func runKprobes() {
 		map4 = nil
 	}
 
+	table6 := bpf.NewTable(m.TableId("ipv6_events"), m)
+	channel6 := make(chan []byte)
+	map6, err := bpf.InitPerfMap(table6, channel6)
+	if err != nil {
+		map6 = nil
+	}
+
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, os.Interrupt, os.Kill)
 
@@ -124,12 +157,27 @@ func runKprobes() {
 		}
 	})()
 
+	go (func() {
+		for {
+			var event IP6Event
+			data := <-channel6
+			binary.Read(bytes.NewBuffer(data), binary.LittleEndian, &event)
+			printIP6Event(&event)
+		}
+	})()
+
 	if map4 != nil {
 		map4.Start()
+	}
+	if map6 != nil {
+		map6.Start()
 	}
 	<-sig
 	if map4 != nil {
 		map4.Stop()
+	}
+	if map6 != nil {
+		map6.Stop()
 	}
 }
 
@@ -138,6 +186,7 @@ func setupWorkers() {
 }
 
 func printIP4Event(event *IP4Event) {
+	log.Print("IP4Event")
 	log.Print(event)
 	task := (*C.char)(unsafe.Pointer(&event.Task))
 	log.Printf("Pid: %d, Task: %s", event.Pid, C.GoString(task))
@@ -149,14 +198,33 @@ func printIP4Event(event *IP4Event) {
 		log.Printf("User: %d (%s)", event.UID, user.Username)
 	}
 
-	destIP := conv.ToIP(event.Daddr)
+	destIP := conv.ToIP4(event.Daddr)
 	log.Printf("Destination Address: %s:%d", destIP, event.Dport)
 	log.Print("----")
 }
 
-/*
- * IP4Event is an event received from the eBPF program
- */
+func printIP6Event(event *IP6Event) {
+	// TODO combine event printing
+	log.Print("IP6Event")
+	log.Print(event)
+	task := (*C.char)(unsafe.Pointer(&event.Task))
+	log.Printf("Pid: %d, Task: %s", event.Pid, C.GoString(task))
+
+	user, err := user.LookupId(strconv.Itoa(int(event.UID)))
+	if err != nil {
+		log.Printf("Could not lookup user with id: %d", event.UID)
+	} else {
+		log.Printf("User: %d (%s)", event.UID, user.Username)
+	}
+
+	destIP := conv.ToIP6(event.Daddr1, event.Daddr2)
+	log.Printf("Destination Address: [%s]:%d", destIP, event.Dport)
+	log.Print("----")
+}
+
+// TODO: create a common interface
+
+// IP4Event represents a socket connect event from AF_INET(4)
 type IP4Event struct {
 	TsUs  uint64
 	Pid   uint32
@@ -165,4 +233,16 @@ type IP4Event struct {
 	Dport uint16
 	Af    uint32
 	Task  [16]byte
+}
+
+// IP6Event represents a socket connect event from AF_INET6
+type IP6Event struct {
+	TsUs   uint64
+	Pid    uint32
+	UID    uint32
+	Daddr1 uint64
+	Daddr2 uint64
+	Dport  uint16
+	Af     uint32
+	Task   [16]byte
 }
