@@ -40,7 +40,7 @@ const src string = `
 #include <linux/ip.h>
 #include <bcc/proto.h>
 
-struct ipv4_data_t {
+struct ipv4_event_t {
     u64 ts_us;
     u32 pid;
     u32 uid;
@@ -51,7 +51,7 @@ struct ipv4_data_t {
 } __attribute__((packed));
 BPF_PERF_OUTPUT(ipv4_events);
 
-struct ipv6_data_t {
+struct ipv6_event_t {
     u64 ts_us;
     u32 pid;
     u32 uid;
@@ -77,7 +77,7 @@ int security_socket_connect_entry(struct pt_regs *ctx, struct socket *sock, stru
 
 	u32 address_family = address->sa_family;
     if (address_family == AF_INET) {
-        struct ipv4_data_t data4 = {.pid = pid, .uid = uid};
+        struct ipv4_event_t data4 = {.pid = pid, .uid = uid};
         data4.ts_us = bpf_ktime_get_ns() / 1000;
 
 		struct sockaddr_in *daddr = (struct sockaddr_in *)address;
@@ -94,7 +94,7 @@ int security_socket_connect_entry(struct pt_regs *ctx, struct socket *sock, stru
 		ipv4_events.perf_submit(ctx, &data4, sizeof(data4));
 		
     } else if (address_family == AF_INET6) {
-        struct ipv6_data_t data6 = {.pid = pid, .uid = uid};
+        struct ipv6_event_t data6 = {.pid = pid, .uid = uid};
 		data6.ts_us = bpf_ktime_get_ns() / 1000;
 		
 		struct sockaddr_in6 *daddr6 = (struct sockaddr_in6 *)address;
