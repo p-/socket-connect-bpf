@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"log"
+	"net"
 	"os"
 	"os/signal"
 	"os/user"
@@ -165,12 +166,18 @@ func runKprobes() {
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, os.Interrupt, os.Kill)
 
+	out := newOutput()
+	out.PrintHeader()
+
 	go (func() {
 		for {
 			var event IP4Event
 			data := <-channel4
 			binary.Read(bytes.NewBuffer(data), binary.LittleEndian, &event)
-			printIP4Event(&event)
+			eventPayload := newGenericEventPayload(&event.Event)
+			eventPayload.DestIP = conv.ToIP4(event.Daddr)
+			eventPayload.DestPort = event.Dport
+			out.PrintLine(eventPayload)
 		}
 	})()
 
@@ -179,7 +186,10 @@ func runKprobes() {
 			var event IP6Event
 			data := <-channel6
 			binary.Read(bytes.NewBuffer(data), binary.LittleEndian, &event)
-			printIP6Event(&event)
+			eventPayload := newGenericEventPayload(&event.Event)
+			eventPayload.DestIP = conv.ToIP6(event.Daddr1, event.Daddr2)
+			eventPayload.DestPort = event.Dport
+			out.PrintLine(eventPayload)
 		}
 	})()
 
@@ -188,7 +198,8 @@ func runKprobes() {
 			var event OtherSocketEvent
 			data := <-otherChannel
 			binary.Read(bytes.NewBuffer(data), binary.LittleEndian, &event)
-			printOtherSocketEvent(&event)
+			eventPayload := newGenericEventPayload(&event.Event)
+			out.PrintLine(eventPayload)
 		}
 	})()
 
@@ -217,58 +228,25 @@ func setupWorkers() {
 	go runKprobes()
 }
 
-func printIP4Event(event *IP4Event) {
-	log.Print("IP4Event")
-	log.Print(event)
+func newGenericEventPayload(event *Event) eventPayload {
 	task := (*C.char)(unsafe.Pointer(&event.Task))
-	log.Printf("Pid: %d, Task: %s", event.Pid, C.GoString(task))
 
-	user, err := user.LookupId(strconv.Itoa(int(event.UID)))
+	username := strconv.Itoa(int(event.UID))
+	user, err := user.LookupId(username)
 	if err != nil {
 		log.Printf("Could not lookup user with id: %d", event.UID)
 	} else {
-		log.Printf("User: %d (%s)", event.UID, user.Username)
+		username = user.Username
 	}
 
-	destIP := conv.ToIP4(event.Daddr)
-	log.Printf("Destination Address: %s:%d", destIP, event.Dport)
-	log.Print("----")
-}
-
-func printIP6Event(event *IP6Event) {
-	// TODO combine event printing
-	log.Print("IP6Event")
-	log.Print(event)
-	task := (*C.char)(unsafe.Pointer(&event.Task))
-	log.Printf("Pid: %d, Task: %s", event.Pid, C.GoString(task))
-
-	user, err := user.LookupId(strconv.Itoa(int(event.UID)))
-	if err != nil {
-		log.Printf("Could not lookup user with id: %d", event.UID)
-	} else {
-		log.Printf("User: %d (%s)", event.UID, user.Username)
+	payload := eventPayload{
+		Time:          strconv.Itoa(int(event.TsUs)),
+		AddressFamily: strconv.Itoa(int(event.Af)),
+		Pid:           event.Pid,
+		User:          username,
+		Comm:          C.GoString(task),
 	}
-
-	destIP := conv.ToIP6(event.Daddr1, event.Daddr2)
-	log.Printf("Destination Address: [%s]:%d", destIP, event.Dport)
-	log.Print("----")
-}
-
-func printOtherSocketEvent(event *OtherSocketEvent) {
-	// TODO combine event printing
-	log.Printf("OtherSocketEvent, AF: %d", event.Af)
-	log.Print(event)
-	task := (*C.char)(unsafe.Pointer(&event.Task))
-	log.Printf("Pid: %d, Task: %s", event.Pid, C.GoString(task))
-
-	user, err := user.LookupId(strconv.Itoa(int(event.UID)))
-	if err != nil {
-		log.Printf("Could not lookup user with id: %d", event.UID)
-	} else {
-		log.Printf("User: %d (%s)", event.UID, user.Username)
-	}
-
-	log.Print("----")
+	return payload
 }
 
 // Event is a common event interface
@@ -298,4 +276,14 @@ type IP6Event struct {
 // OtherSocketEvent represents the socket connects that are not AF_INET, AF_INET6 or AF_UNIX
 type OtherSocketEvent struct {
 	Event
+}
+
+type eventPayload struct {
+	Time          string
+	AddressFamily string
+	Pid           uint32
+	User          string
+	Comm          string
+	DestIP        net.IP
+	DestPort      uint16
 }
