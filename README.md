@@ -2,6 +2,9 @@
 
 BPF/eBPF prototype with a probe attached to `security_socket_connect` from [linux/security.h](https://github.com/torvalds/linux/blob/master/include/linux/security.h).
 
+## License
+The socket-connect-bpf Go code is licensed under the Apache License. The BPF code is licensed under GPL as some [BPF-helpers are GPL-only](https://github.com/iovisor/bcc/blob/master/docs/kernel-versions.md#helpers).
+
 ## Using
 Tested on Ubuntu 18.04.2 with Linux Kernel 4.18.
 
