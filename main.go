@@ -62,6 +62,15 @@ struct ipv6_event_t {
 } __attribute__((packed));
 BPF_PERF_OUTPUT(ipv6_events);
 
+struct other_socket_event_t {
+    u64 ts_us;
+    u32 pid;
+    u32 uid;
+	u32 af;
+    char task[TASK_COMM_LEN];
+} __attribute__((packed));
+BPF_PERF_OUTPUT(other_socket_events);
+
 int security_socket_connect_entry(struct pt_regs *ctx, struct socket *sock, struct sockaddr *address, int addrlen)
 {
 	int ret = PT_REGS_RC(ctx);
@@ -77,7 +86,7 @@ int security_socket_connect_entry(struct pt_regs *ctx, struct socket *sock, stru
 
 	u32 address_family = address->sa_family;
     if (address_family == AF_INET) {
-        struct ipv4_event_t data4 = {.pid = pid, .uid = uid};
+        struct ipv4_event_t data4 = {.pid = pid, .uid = uid, .af = address_family};
         data4.ts_us = bpf_ktime_get_ns() / 1000;
 
 		struct sockaddr_in *daddr = (struct sockaddr_in *)address;
@@ -88,13 +97,11 @@ int security_socket_connect_entry(struct pt_regs *ctx, struct socket *sock, stru
 		bpf_probe_read(&dport, sizeof(dport), &daddr->sin_port);
 		data4.dport = ntohs(dport);
 
-		data4.af = address_family;
-
 		bpf_get_current_comm(&data4.task, sizeof(data4.task));
 		ipv4_events.perf_submit(ctx, &data4, sizeof(data4));
 		
     } else if (address_family == AF_INET6) {
-        struct ipv6_event_t data6 = {.pid = pid, .uid = uid};
+        struct ipv6_event_t data6 = {.pid = pid, .uid = uid, .af = address_family};
 		data6.ts_us = bpf_ktime_get_ns() / 1000;
 		
 		struct sockaddr_in6 *daddr6 = (struct sockaddr_in6 *)address;
@@ -105,11 +112,14 @@ int security_socket_connect_entry(struct pt_regs *ctx, struct socket *sock, stru
 		bpf_probe_read(&dport6, sizeof(dport6), &daddr6->sin6_port);
 		data6.dport = ntohs(dport6);
 
-		data6.af = address_family;
-
         bpf_get_current_comm(&data6.task, sizeof(data6.task));
         ipv6_events.perf_submit(ctx, &data6, sizeof(data6));
-    }
+    } else if (address_family != AF_UNIX) { // all other sockets, except UNIX sockets
+		struct other_socket_event_t socket_event = {.pid = pid, .uid = uid, .af = address_family};
+		socket_event.ts_us = bpf_ktime_get_ns() / 1000;
+		bpf_get_current_comm(&socket_event.task, sizeof(socket_event.task));
+        other_socket_events.perf_submit(ctx, &socket_event, sizeof(socket_event));
+	}
 
     return 0;
 }
@@ -145,6 +155,13 @@ func runKprobes() {
 		map6 = nil
 	}
 
+	otherTable := bpf.NewTable(m.TableId("other_socket_events"), m)
+	otherChannel := make(chan []byte)
+	otherMap, err := bpf.InitPerfMap(otherTable, otherChannel)
+	if err != nil {
+		otherMap = nil
+	}
+
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, os.Interrupt, os.Kill)
 
@@ -166,11 +183,23 @@ func runKprobes() {
 		}
 	})()
 
+	go (func() {
+		for {
+			var event OtherSocketEvent
+			data := <-otherChannel
+			binary.Read(bytes.NewBuffer(data), binary.LittleEndian, &event)
+			printOtherSocketEvent(&event)
+		}
+	})()
+
 	if map4 != nil {
 		map4.Start()
 	}
 	if map6 != nil {
 		map6.Start()
+	}
+	if otherMap != nil {
+		otherMap.Start()
 	}
 	<-sig
 	if map4 != nil {
@@ -178,6 +207,9 @@ func runKprobes() {
 	}
 	if map6 != nil {
 		map6.Stop()
+	}
+	if otherMap != nil {
+		otherMap.Stop()
 	}
 }
 
@@ -222,12 +254,29 @@ func printIP6Event(event *IP6Event) {
 	log.Print("----")
 }
 
+func printOtherSocketEvent(event *OtherSocketEvent) {
+	// TODO combine event printing
+	log.Printf("OtherSocketEvent, AF: %d", event.Af)
+	log.Print(event)
+	task := (*C.char)(unsafe.Pointer(&event.Task))
+	log.Printf("Pid: %d, Task: %s", event.Pid, C.GoString(task))
+
+	user, err := user.LookupId(strconv.Itoa(int(event.UID)))
+	if err != nil {
+		log.Printf("Could not lookup user with id: %d", event.UID)
+	} else {
+		log.Printf("User: %d (%s)", event.UID, user.Username)
+	}
+
+	log.Print("----")
+}
+
 // Event is a common event interface
 type Event struct {
 	TsUs uint64
 	Pid  uint32
 	UID  uint32
-	Af   uint32
+	Af   uint32 // Address Family
 	Task [16]byte
 }
 
@@ -244,4 +293,9 @@ type IP6Event struct {
 	Daddr1 uint64
 	Daddr2 uint64
 	Dport  uint16
+}
+
+// OtherSocketEvent represents the socket connects that are not AF_INET, AF_INET6 or AF_UNIX
+type OtherSocketEvent struct {
+	Event
 }
