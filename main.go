@@ -44,10 +44,10 @@ struct ipv4_data_t {
     u64 ts_us;
     u32 pid;
     u32 uid;
-    u32 daddr;
-	u16 dport;
 	u32 af;
     char task[TASK_COMM_LEN];
+    u32 daddr;
+	u16 dport;
 } __attribute__((packed));
 BPF_PERF_OUTPUT(ipv4_events);
 
@@ -55,10 +55,10 @@ struct ipv6_data_t {
     u64 ts_us;
     u32 pid;
     u32 uid;
-    unsigned __int128 daddr;
-	u16 dport;
 	u32 af;
     char task[TASK_COMM_LEN];
+    unsigned __int128 daddr;
+	u16 dport;
 } __attribute__((packed));
 BPF_PERF_OUTPUT(ipv6_events);
 
@@ -222,27 +222,26 @@ func printIP6Event(event *IP6Event) {
 	log.Print("----")
 }
 
-// TODO: create a common interface
+// Event is a common event interface
+type Event struct {
+	TsUs uint64
+	Pid  uint32
+	UID  uint32
+	Af   uint32
+	Task [16]byte
+}
 
 // IP4Event represents a socket connect event from AF_INET(4)
 type IP4Event struct {
-	TsUs  uint64
-	Pid   uint32
-	UID   uint32
+	Event
 	Daddr uint32
 	Dport uint16
-	Af    uint32
-	Task  [16]byte
 }
 
 // IP6Event represents a socket connect event from AF_INET6
 type IP6Event struct {
-	TsUs   uint64
-	Pid    uint32
-	UID    uint32
+	Event
 	Daddr1 uint64
 	Daddr2 uint64
 	Dport  uint16
-	Af     uint32
-	Task   [16]byte
 }
