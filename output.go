@@ -31,13 +31,13 @@ type tableOutput struct {
 }
 
 func (t tableOutput) PrintHeader() {
-	header := "%-12s %-6s %-6s %-16s %-16s %s\n"
+	header := "%-12s %-14s %-6s %-16s %-16s %s\n"
 	args := []interface{}{"TIME", "AF", "PID", "USER", "PCOMM", "DESTINATION"}
 	fmt.Printf(header, args...)
 }
 
 func (t tableOutput) PrintLine(e eventPayload) {
-	header := "%-12s %-6s %-6d %-16s %-16s %s:%d\n"
+	header := "%-12s %-14s %-6d %-16s %-16s %s:%d\n"
 	args := []interface{}{e.Time, e.AddressFamily, e.Pid, e.User, e.Comm, e.DestIP, e.DestPort}
 	fmt.Printf(header, args...)
 }

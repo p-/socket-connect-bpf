@@ -241,7 +241,7 @@ func newGenericEventPayload(event *Event) eventPayload {
 
 	payload := eventPayload{
 		Time:          strconv.Itoa(int(event.TsUs)),
-		AddressFamily: strconv.Itoa(int(event.Af)),
+		AddressFamily: conv.ToAddressFamily(int(event.Af)),
 		Pid:           event.Pid,
 		User:          username,
 		Comm:          C.GoString(task),
