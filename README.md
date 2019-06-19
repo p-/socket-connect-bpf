@@ -10,6 +10,7 @@ Tested on Ubuntu 18.04.2 with Linux Kernel 4.18.
 
 Build:
 
+    go generate
     go build
 
 Run:
