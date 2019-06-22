@@ -40,7 +40,7 @@ func main() {
 }
 
 func runSecuritySocketConnectKprobes() {
-	m := bpf.NewModule(security_socket_connect_src, []string{})
+	m := bpf.NewModule(securitySocketConnectSrc, []string{})
 	defer m.Close()
 	securitySocketConnectEntry, err := m.LoadKprobe("security_socket_connect_entry")
 	if err != nil {
@@ -132,7 +132,7 @@ func runSecuritySocketConnectKprobes() {
 }
 
 func runDNSLookupKprobes() {
-	m := bpf.NewModule(dns_lookup_src, []string{})
+	m := bpf.NewModule(dnsLookupSrc, []string{})
 	defer m.Close()
 	dnsLookupEntry, err := m.LoadKprobe("dns_lookup_entry")
 	if err != nil {
