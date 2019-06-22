@@ -5,6 +5,12 @@ BPF/eBPF prototype with a probe attached to `security_socket_connect` from [linu
 ## License
 The socket-connect-bpf Go code is licensed under the Apache License. The BPF code is licensed under GPL as some [BPF-helpers are GPL-only](https://github.com/iovisor/bcc/blob/master/docs/kernel-versions.md#helpers).
 
+## Requirements
+* Recent Kernel: 4.18 and later
+* [Go](https://golang.org/)
+* upstream [bpfcc-tools](https://github.com/iovisor/bcc/blob/master/INSTALL.md#ubuntu---binary)
+
+
 ## Using
 Tested on Ubuntu 18.04.2 with Linux Kernel 4.18.
 
