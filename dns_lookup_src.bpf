@@ -1,0 +1,49 @@
+#include <uapi/linux/ptrace.h>
+#include <linux/sched.h>
+// Based on https://github.com/iovisor/bcc/blob/51d62d36bd072530a238ac147a61b631fdc44659/tools/gethostlatency.py
+// map to getaddrinfo and gethostbyname
+struct val_t {
+    u32 pid;
+    char comm[TASK_COMM_LEN];
+    char host[80];
+    u64 ts;
+} __attribute__((packed));
+struct data_t {
+    u32 pid;
+    u64 delta;
+    char comm[TASK_COMM_LEN];
+    char host[80];
+} __attribute__((packed));
+BPF_HASH(start, u32, struct val_t);
+BPF_PERF_OUTPUT(events);
+int dns_lookup_entry(struct pt_regs *ctx) {
+    if (!PT_REGS_PARM1(ctx))
+        return 0;
+    struct val_t val = {};
+    u32 pid = bpf_get_current_pid_tgid();
+    if (bpf_get_current_comm(&val.comm, sizeof(val.comm)) == 0) {
+        bpf_probe_read(&val.host, sizeof(val.host),
+                       (void *)PT_REGS_PARM1(ctx));
+        val.pid = bpf_get_current_pid_tgid();
+        val.ts = bpf_ktime_get_ns();
+        start.update(&pid, &val);
+    }
+    return 0;
+}
+int dns_lookup_return(struct pt_regs *ctx) {
+    struct val_t *valp;
+    struct data_t data = {};
+    u64 delta;
+    u32 pid = bpf_get_current_pid_tgid();
+    u64 tsp = bpf_ktime_get_ns();
+    valp = start.lookup(&pid);
+    if (valp == 0)
+        return 0;       // missed start
+    bpf_probe_read(&data.comm, sizeof(data.comm), valp->comm);
+    bpf_probe_read(&data.host, sizeof(data.host), (void *)valp->host);
+    data.pid = valp->pid;
+    data.delta = tsp - valp->ts;
+    events.perf_submit(ctx, &data, sizeof(data));
+    start.delete(&pid);
+    return 0;
+}

@@ -39,7 +39,7 @@ func main() {
 	select {} // block forever
 }
 
-func runKprobes() {
+func runSecuritySocketConnectKprobes() {
 	m := bpf.NewModule(security_socket_connect_src, []string{})
 	defer m.Close()
 	securitySocketConnectEntry, err := m.LoadKprobe("security_socket_connect_entry")
@@ -131,8 +131,73 @@ func runKprobes() {
 	}
 }
 
+func runDNSLookupKprobes() {
+	m := bpf.NewModule(dns_lookup_src, []string{})
+	defer m.Close()
+	dnsLookupEntry, err := m.LoadKprobe("dns_lookup_entry")
+	if err != nil {
+		log.Fatal("LoadKprobe failed!", err)
+	}
+
+	dnsLookupReturn, err := m.LoadUprobe("dns_lookup_return")
+	if err != nil {
+		log.Fatal("LoadKprobe failed!", err)
+	}
+
+	attachUprobe(m, "getaddrinfo", dnsLookupEntry)
+	attachUprobe(m, "gethostbyname", dnsLookupEntry)
+	attachUprobe(m, "gethostbyname2", dnsLookupEntry)
+
+	attachUretprobe(m, "getaddrinfo", dnsLookupReturn)
+	attachUretprobe(m, "gethostbyname", dnsLookupReturn)
+	attachUretprobe(m, "gethostbyname2", dnsLookupReturn)
+
+	tableTimings := bpf.NewTable(m.TableId("events"), m)
+	channelTimings := make(chan []byte)
+	mapTimings, err := bpf.InitPerfMap(tableTimings, channelTimings)
+	if err != nil {
+		mapTimings = nil
+	}
+
+	sig := make(chan os.Signal, 1)
+	signal.Notify(sig, os.Interrupt, os.Kill)
+
+	go (func() {
+		for {
+			var event DNSEvent
+			data := <-channelTimings
+			binary.Read(bytes.NewBuffer(data), binary.LittleEndian, &event)
+			printDNSEvent(&event)
+		}
+	})()
+
+	if mapTimings != nil {
+		mapTimings.Start()
+	}
+	<-sig
+	if mapTimings != nil {
+		mapTimings.Stop()
+	}
+}
+
 func setupWorkers() {
-	go runKprobes()
+	go runSecuritySocketConnectKprobes()
+	go runDNSLookupKprobes()
+}
+
+func attachUprobe(module *bpf.Module, functionName string, bpfProgram int) {
+	err := module.AttachUprobe("c", functionName, bpfProgram, -1)
+	if err != nil {
+		log.Fatal("AttachUprobe failed!", err)
+	}
+
+}
+
+func attachUretprobe(module *bpf.Module, functionName string, bpfProgram int) {
+	err := module.AttachUretprobe("c", functionName, bpfProgram, -1)
+	if err != nil {
+		log.Fatal("AttachUretprobe failed!", err)
+	}
 }
 
 func newGenericEventPayload(event *Event) eventPayload {
@@ -154,6 +219,20 @@ func newGenericEventPayload(event *Event) eventPayload {
 		Comm:          C.GoString(task),
 	}
 	return payload
+}
+
+func printDNSEvent(event *DNSEvent) {
+	host := (*C.char)(unsafe.Pointer(&event.Host))
+	task := (*C.char)(unsafe.Pointer(&event.Task))
+	log.Printf("PID: %d, Host: %s, Task %s", event.Pid, C.GoString(host), C.GoString(task))
+}
+
+// DNSEvent is used for DNS Lookup events
+type DNSEvent struct {
+	Pid   uint32
+	Delta uint64
+	Task  [16]byte
+	Host  [80]byte
 }
 
 // Event is a common event interface
