@@ -30,6 +30,7 @@ Stop:
 ## AS Numbers
 
 AS Data of [IPtoASN](https://iptoasn.com/) is used.
+The local AS-Number lookup will require some more RAM.
 
 ## Development
 Run tests:

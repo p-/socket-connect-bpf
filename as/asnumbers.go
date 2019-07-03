@@ -49,7 +49,7 @@ func ParseASNumbers(asTsvFile string) {
 		endAddr, _ := strconv.ParseUint(each[1], 10, 32) // Could be cast to uint32
 		asNumber, _ := strconv.Atoi(each[2])
 
-		if (endAddr-startAddr) >= 65536 && asNumber != 0 {
+		if asNumber != 0 {
 			asName := each[4]
 			bucket := bs[0]
 			entry := ASInfo{StartIP: uint32(startAddr), EndIP: uint32(endAddr), AsNumber: uint32(asNumber), Desc: asName}
