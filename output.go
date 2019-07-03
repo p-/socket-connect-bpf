@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 )
 
@@ -31,14 +32,15 @@ type tableOutput struct {
 }
 
 func (t tableOutput) PrintHeader() {
-	header := "%-12s %-14s %-6s %-16s %-16s %s\n"
-	args := []interface{}{"TIME", "AF", "PID", "USER", "PCOMM", "DESTINATION"}
+	header := "%-12s %-14s %-6s %-16s %-16s %-16s %s\n"
+	args := []interface{}{"TIME", "AF", "PID", "USER", "PCOMM", "DESTINATION", "AS-INFO"}
 	fmt.Printf(header, args...)
 }
 
 func (t tableOutput) PrintLine(e eventPayload) {
-	header := "%-12s %-14s %-6d %-16s %-16s %s:%d\n"
-	args := []interface{}{e.Time, e.AddressFamily, e.Pid, e.User, e.Comm, e.DestIP, e.DestPort}
+	var dest = e.DestIP.String() + strconv.Itoa(int(e.DestPort))
+	header := "%-12s %-14s %-6d %-16s %-16s %-16s %s\n"
+	args := []interface{}{e.Time, e.AddressFamily, e.Pid, e.User, e.Comm, dest, e.ASInfo.Desc}
 	fmt.Printf(header, args...)
 }
 

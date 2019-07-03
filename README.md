@@ -26,3 +26,12 @@ Run:
 Stop:
 
     sudo killall socket-connect-bpf
+
+## AS Numbers
+
+AS Data of [IPtoASN](https://iptoasn.com/) is used.
+
+## Development
+Run tests:
+
+    go test ./...

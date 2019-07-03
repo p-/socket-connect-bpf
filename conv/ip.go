@@ -22,3 +22,11 @@ func ToIP6(ipPart1 uint64, ipPart2 uint64) net.IP {
 	binary.LittleEndian.PutUint32(ip[12:], uint32(ipPart2>>32))
 	return ip
 }
+
+// ToUint converts an IP to an uint32
+func ToUint(ip net.IP) uint32 {
+	if len(ip) == 16 {
+		return binary.BigEndian.Uint32(ip[12:16])
+	}
+	return binary.BigEndian.Uint32(ip)
+}

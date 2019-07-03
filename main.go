@@ -26,6 +26,7 @@ import (
 	"unsafe"
 
 	bpf "github.com/iovisor/gobpf/bcc"
+	"github.com/p-/socket-connect-bpf/as"
 	"github.com/p-/socket-connect-bpf/conv"
 )
 
@@ -35,6 +36,7 @@ import "C"
 
 func main() {
 	log.Print("starting socket-connect-bpf")
+	as.ParseASNumbers("./as/ip2asn-v4-u32.tsv")
 	setupWorkers()
 	select {} // block forever
 }
@@ -84,6 +86,7 @@ func runSecuritySocketConnectKprobes() {
 			eventPayload := newGenericEventPayload(&event.Event)
 			eventPayload.DestIP = conv.ToIP4(event.Daddr)
 			eventPayload.DestPort = event.Dport
+			eventPayload.ASInfo = as.GetASInfo(eventPayload.DestIP)
 			out.PrintLine(eventPayload)
 		}
 	})()
@@ -272,4 +275,5 @@ type eventPayload struct {
 	Comm          string
 	DestIP        net.IP
 	DestPort      uint16
+	ASInfo        as.ASInfo
 }
