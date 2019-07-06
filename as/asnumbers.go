@@ -7,6 +7,7 @@ import (
 	"net"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/p-/socket-connect-bpf/conv"
 )
@@ -50,9 +51,9 @@ func ParseASNumbers(asTsvFile string) {
 		asNumber, _ := strconv.Atoi(each[2])
 
 		if asNumber != 0 {
-			asName := each[4]
+			asName := getNameOnly(each[4])
 			bucket := bs[0]
-			entry := ASInfo{StartIP: uint32(startAddr), EndIP: uint32(endAddr), AsNumber: uint32(asNumber), Desc: asName}
+			entry := ASInfo{StartIP: uint32(startAddr), EndIP: uint32(endAddr), AsNumber: uint32(asNumber), Name: asName}
 			val, ok := asMap[bucket]
 
 			if !ok {
@@ -68,6 +69,10 @@ func toBigIP4(addr uint32) net.IP {
 	ip := make(net.IP, 4)
 	binary.BigEndian.PutUint32(ip, addr)
 	return ip
+}
+
+func getNameOnly(desc string) string {
+	return strings.Fields(desc)[0]
 }
 
 // GetASInfo returns information about an autonomous system (AS) of which the given IP is part of.
@@ -103,5 +108,5 @@ type ASInfo struct {
 	StartIP  uint32
 	EndIP    uint32
 	AsNumber uint32
-	Desc     string
+	Name     string
 }

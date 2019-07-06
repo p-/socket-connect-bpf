@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strconv"
 	"time"
+
+	"github.com/p-/socket-connect-bpf/as"
 )
 
 type output interface {
@@ -38,9 +40,13 @@ func (t tableOutput) PrintHeader() {
 }
 
 func (t tableOutput) PrintLine(e eventPayload) {
-	var dest = e.DestIP.String() + ":" + strconv.Itoa(int(e.DestPort))
+	dest := e.DestIP.String() + ":" + strconv.Itoa(int(e.DestPort))
+	var asText = ""
+	if (as.ASInfo{}) != e.ASInfo {
+		asText = "AS" + strconv.Itoa(int(e.ASInfo.AsNumber)) + " (" + e.ASInfo.Name + ")"
+	}
 	header := "%-12s %-14s %-6d %-16s %-16s %-20s %s\n"
-	args := []interface{}{e.Time, e.AddressFamily, e.Pid, e.User, e.Comm, dest, e.ASInfo.Desc}
+	args := []interface{}{e.Time, e.AddressFamily, e.Pid, e.User, e.Comm, dest, asText}
 	fmt.Printf(header, args...)
 }
 

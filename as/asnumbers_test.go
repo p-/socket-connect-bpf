@@ -9,9 +9,9 @@ func TestIPToAsRange(t *testing.T) {
 	ParseASNumbers("./ip2asn-v4-u32.tsv")
 	ip := "38.63.2.254"
 	got := GetASInfo(net.ParseIP(ip))
-	wantDesc := "COGENT-174 - Cogent Communications"
-	if got.Desc != wantDesc {
-		t.Errorf("GetASInfo(%s) = %s; want %s", ip, got.Desc, wantDesc)
+	wantName := "COGENT-174"
+	if got.Name != wantName {
+		t.Errorf("GetASInfo(%s) = %s; want %s", ip, got.Name, wantName)
 	}
 	wantAsNumber := uint32(174)
 	if got.AsNumber != wantAsNumber {
