@@ -28,6 +28,7 @@ import (
 	bpf "github.com/iovisor/gobpf/bcc"
 	"github.com/p-/socket-connect-bpf/as"
 	"github.com/p-/socket-connect-bpf/conv"
+	"github.com/p-/socket-connect-bpf/linux"
 )
 
 import "C"
@@ -218,6 +219,7 @@ func newGenericEventPayload(event *Event) eventPayload {
 		Time:          strconv.Itoa(int(event.TsUs)),
 		AddressFamily: conv.ToAddressFamily(int(event.Af)),
 		Pid:           event.Pid,
+		ProcessPath:   linux.ProcessPathForPid(int(event.Pid)),
 		User:          username,
 		Comm:          C.GoString(task),
 	}
@@ -271,6 +273,7 @@ type eventPayload struct {
 	Time          string
 	AddressFamily string
 	Pid           uint32
+	ProcessPath   string
 	User          string
 	Comm          string
 	DestIP        net.IP
