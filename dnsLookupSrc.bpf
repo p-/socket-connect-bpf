@@ -39,7 +39,7 @@ int dns_lookup_return(struct pt_regs *ctx) {
     u64 tsp = bpf_ktime_get_ns();
     valp = start.lookup(&pid);
     if (valp == 0)
-        return 0;       // missed start
+        return 0; // missed start
     bpf_probe_read(&data.comm, sizeof(data.comm), valp->comm);
     bpf_probe_read(&data.host, sizeof(data.host), (void *)valp->host);
     data.pid = valp->pid;
