@@ -17,12 +17,14 @@ package main
 import (
 	"bytes"
 	"encoding/binary"
+	"fmt"
 	"log"
 	"net"
 	"os"
 	"os/signal"
 	"os/user"
 	"strconv"
+	"syscall"
 	"unsafe"
 
 	bpf "github.com/iovisor/gobpf/bcc"
@@ -39,7 +41,29 @@ func main() {
 	log.Print("starting socket-connect-bpf")
 	as.ParseASNumbers("./as/ip2asn-v4-u32.tsv")
 	setupWorkers()
-	select {} // block forever
+	listenToInterrupts()
+	//select {} // block forever
+}
+
+func setupWorkers() {
+	go runSecuritySocketConnectKprobes()
+	go runDNSLookupKprobes()
+}
+
+func listenToInterrupts() {
+	sigs := make(chan os.Signal, 1)
+	done := make(chan bool, 1)
+
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		sig := <-sigs
+		fmt.Println()
+		fmt.Println(sig)
+		done <- true
+	}()
+
+	<-done
 }
 
 func runSecuritySocketConnectKprobes() {
@@ -182,11 +206,6 @@ func runDNSLookupKprobes() {
 	if mapTimings != nil {
 		mapTimings.Stop()
 	}
-}
-
-func setupWorkers() {
-	go runSecuritySocketConnectKprobes()
-	go runDNSLookupKprobes()
 }
 
 func attachUprobe(module *bpf.Module, functionName string, bpfProgram int) {
