@@ -244,16 +244,18 @@ func newGenericEventPayload(event *Event) eventPayload {
 func printDNSEvent(event *DNSEvent) {
 	host := (*C.char)(unsafe.Pointer(&event.Host))
 	task := (*C.char)(unsafe.Pointer(&event.Task))
-	log.Printf("PID: %d, Host: %s, Task %s, AF %d", event.Pid, C.GoString(host), C.GoString(task), event.Af)
+	ip1 := conv.ToIP4(event.Daddr1)
+	log.Printf("PID: %d, Host: %s, Task %s, AF %d, 1st IP %s", event.Pid, C.GoString(host), C.GoString(task), event.Af, ip1)
 }
 
 // DNSEvent is used for DNS Lookup events
 type DNSEvent struct {
-	Pid   uint32
-	Delta uint64
-	Task  [16]byte
-	Af    uint32
-	Host  [80]byte
+	Pid    uint32
+	Delta  uint64
+	Task   [16]byte
+	Af     uint32
+	Daddr1 uint32
+	Host   [80]byte
 }
 
 // Event is a common event interface

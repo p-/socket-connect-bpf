@@ -1,6 +1,10 @@
 /* vim: syntax=c */
 #include <uapi/linux/ptrace.h>
 #include <linux/sched.h>
+#include <linux/socket.h>
+#include <linux/in.h>
+#include <linux/in6.h>
+
 // Based on https://github.com/iovisor/bcc/blob/51d62d36bd072530a238ac147a61b631fdc44659/tools/gethostlatency.py
 // map to getaddrinfo and gethostbyname
 
@@ -29,6 +33,7 @@ struct data_t {
     u64 delta;
     char comm[TASK_COMM_LEN];
     u32 af;
+    u32 daddr1;
     char host[80];
 } __attribute__((packed));
 
@@ -73,7 +78,13 @@ int getaddrinfo_return(struct pt_regs *ctx) {
 
     struct addrinfo **resx = *res;
     struct addrinfo *resxx = *resx;
+
     data.af = resxx->ai_family;
+
+    if (data.af == AF_INET) {
+        struct sockaddr_in *daddr = (struct sockaddr_in *)resxx->ai_addr;
+        bpf_probe_read(&data.daddr1, sizeof(data.daddr1), &daddr->sin_addr.s_addr);
+    }
 
     data.pid = valp->pid;
     data.delta = tsp - valp->ts;
