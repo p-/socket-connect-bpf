@@ -3,21 +3,42 @@
 #include <linux/sched.h>
 // Based on https://github.com/iovisor/bcc/blob/51d62d36bd072530a238ac147a61b631fdc44659/tools/gethostlatency.py
 // map to getaddrinfo and gethostbyname
+
+// Copied from: include/netdb.h
+struct addrinfo
+{
+  int ai_flags;         /* Input flags.  */
+  int ai_family;        /* Protocol family for socket.  */
+  int ai_socktype;      /* Socket type.  */
+  int ai_protocol;      /* Protocol for socket.  */
+  u32 ai_addrlen;       /* Length of socket address.  */ // CHANGED from socklen_t
+  struct sockaddr *ai_addr; /* Socket address for socket.  */
+  char *ai_canonname;       /* Canonical name for service location.  */
+  struct addrinfo *ai_next; /* Pointer to next in list.  */
+};
+
 struct val_t {
     u32 pid;
     char comm[TASK_COMM_LEN];
     char host[80];
     u64 ts;
 } __attribute__((packed));
+
 struct data_t {
     u32 pid;
     u64 delta;
     char comm[TASK_COMM_LEN];
+    u32 af;
     char host[80];
 } __attribute__((packed));
+
 BPF_HASH(start, u32, struct val_t);
+BPF_HASH(currres, u32, struct addrinfo **);
 BPF_PERF_OUTPUT(events);
-int dns_lookup_entry(struct pt_regs *ctx) {
+
+int getaddrinfo_entry(struct pt_regs *ctx, const char *node, const char *service,
+                       const struct addrinfo *hints,
+                       struct addrinfo **res) {
     if (!PT_REGS_PARM1(ctx))
         return 0;
     struct val_t val = {};
@@ -28,10 +49,11 @@ int dns_lookup_entry(struct pt_regs *ctx) {
         val.pid = bpf_get_current_pid_tgid();
         val.ts = bpf_ktime_get_ns();
         start.update(&pid, &val);
+        currres.update(&pid, &res);
     }
     return 0;
 }
-int dns_lookup_return(struct pt_regs *ctx) {
+int getaddrinfo_return(struct pt_regs *ctx) {
     struct val_t *valp;
     struct data_t data = {};
     u64 delta;
@@ -42,9 +64,21 @@ int dns_lookup_return(struct pt_regs *ctx) {
         return 0; // missed start
     bpf_probe_read(&data.comm, sizeof(data.comm), valp->comm);
     bpf_probe_read(&data.host, sizeof(data.host), (void *)valp->host);
+
+    struct addrinfo ***res;
+    res = currres.lookup(&pid);
+    if (!res || !(*res)) {
+        return 0;   // missed entry
+    }
+
+    struct addrinfo **resx = *res;
+    struct addrinfo *resxx = *resx;
+    data.af = resxx->ai_family;
+
     data.pid = valp->pid;
     data.delta = tsp - valp->ts;
     events.perf_submit(ctx, &data, sizeof(data));
     start.delete(&pid);
+    currres.delete(&pid);
     return 0;
 }

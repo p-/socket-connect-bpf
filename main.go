@@ -162,23 +162,19 @@ func runSecuritySocketConnectKprobes() {
 func runDNSLookupKprobes() {
 	m := bpf.NewModule(dnsLookupSrc, []string{})
 	defer m.Close()
-	dnsLookupEntry, err := m.LoadKprobe("dns_lookup_entry")
+	getAddrinfoEntry, err := m.LoadKprobe("getaddrinfo_entry")
 	if err != nil {
 		log.Fatal("LoadKprobe failed!", err)
 	}
 
-	dnsLookupReturn, err := m.LoadUprobe("dns_lookup_return")
+	getAddrinfoReturn, err := m.LoadUprobe("getaddrinfo_return")
 	if err != nil {
 		log.Fatal("LoadKprobe failed!", err)
 	}
 
-	attachUprobe(m, "getaddrinfo", dnsLookupEntry)
-	attachUprobe(m, "gethostbyname", dnsLookupEntry)
-	attachUprobe(m, "gethostbyname2", dnsLookupEntry)
+	attachUprobe(m, "getaddrinfo", getAddrinfoEntry)
 
-	attachUretprobe(m, "getaddrinfo", dnsLookupReturn)
-	attachUretprobe(m, "gethostbyname", dnsLookupReturn)
-	attachUretprobe(m, "gethostbyname2", dnsLookupReturn)
+	attachUretprobe(m, "getaddrinfo", getAddrinfoReturn)
 
 	tableTimings := bpf.NewTable(m.TableId("events"), m)
 	channelTimings := make(chan []byte)
@@ -248,7 +244,7 @@ func newGenericEventPayload(event *Event) eventPayload {
 func printDNSEvent(event *DNSEvent) {
 	host := (*C.char)(unsafe.Pointer(&event.Host))
 	task := (*C.char)(unsafe.Pointer(&event.Task))
-	log.Printf("PID: %d, Host: %s, Task %s", event.Pid, C.GoString(host), C.GoString(task))
+	log.Printf("PID: %d, Host: %s, Task %s, AF %d", event.Pid, C.GoString(host), C.GoString(task), event.Af)
 }
 
 // DNSEvent is used for DNS Lookup events
@@ -256,6 +252,7 @@ type DNSEvent struct {
 	Pid   uint32
 	Delta uint64
 	Task  [16]byte
+	Af    uint32
 	Host  [80]byte
 }
 
