@@ -32,8 +32,8 @@ struct data_t {
     u32 pid;
     u64 delta;
     char comm[TASK_COMM_LEN];
-    u32 af;
-    u32 daddr1;
+    u32 af1;
+    u32 daddr1; // At the moment we only read one IPv4 address.
     char host[80];
 } __attribute__((packed));
 
@@ -79,9 +79,9 @@ int getaddrinfo_return(struct pt_regs *ctx) {
     struct addrinfo **resx = *res;
     struct addrinfo *resxx = *resx;
 
-    data.af = resxx->ai_family;
+    data.af1 = resxx->ai_family;
 
-    if (data.af == AF_INET) {
+    if (data.af1 == AF_INET) {
         struct sockaddr_in *daddr = (struct sockaddr_in *)resxx->ai_addr;
         bpf_probe_read(&data.daddr1, sizeof(data.daddr1), &daddr->sin_addr.s_addr);
     }
