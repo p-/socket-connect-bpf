@@ -25,6 +25,7 @@ import (
 	"os/user"
 	"strconv"
 	"syscall"
+	"time"
 	"unsafe"
 
 	bpf "github.com/iovisor/gobpf/bcc"
@@ -194,7 +195,6 @@ func runDNSLookupKprobes() {
 			data := <-channelTimings
 			binary.Read(bytes.NewBuffer(data), binary.LittleEndian, &event)
 			collectDNSEvent(&event)
-			printDNSEvent(&event)
 		}
 	})()
 
@@ -234,7 +234,8 @@ func newGenericEventPayload(event *Event) eventPayload {
 	}
 
 	payload := eventPayload{
-		Time:          strconv.Itoa(int(event.TsUs)),
+		KernelTime:    strconv.Itoa(int(event.TsUs)),
+		GoTime:        time.Now(),
 		AddressFamily: conv.ToAddressFamily(int(event.Af)),
 		Pid:           event.Pid,
 		ProcessPath:   linux.ProcessPathForPid(int(event.Pid)),
@@ -247,13 +248,6 @@ func newGenericEventPayload(event *Event) eventPayload {
 func collectDNSEvent(event *DNSEvent) {
 	host := (*C.char)(unsafe.Pointer(&event.Host))
 	dns.AddIP4Entry(event.IP4Addr, event.Pid, C.GoString(host))
-}
-
-func printDNSEvent(event *DNSEvent) {
-	host := (*C.char)(unsafe.Pointer(&event.Host))
-	task := (*C.char)(unsafe.Pointer(&event.Task))
-	ip := conv.ToIP4(event.IP4Addr)
-	log.Printf("PID: %d, Host: %s, Task %s, AF %d, IP %s", event.Pid, C.GoString(host), C.GoString(task), event.Af, ip)
 }
 
 // DNSEvent is used for DNS Lookup events
@@ -296,7 +290,8 @@ type OtherSocketEvent struct {
 }
 
 type eventPayload struct {
-	Time          string
+	KernelTime    string
+	GoTime        time.Time
 	AddressFamily string
 	Pid           uint32
 	ProcessPath   string
