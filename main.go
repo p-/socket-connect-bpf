@@ -31,7 +31,7 @@ import (
 	bpf "github.com/iovisor/gobpf/bcc"
 	"github.com/p-/socket-connect-bpf/as"
 	"github.com/p-/socket-connect-bpf/conv"
-	"github.com/p-/socket-connect-bpf/dns"
+	"github.com/p-/socket-connect-bpf/dnscache"
 	"github.com/p-/socket-connect-bpf/linux"
 )
 
@@ -114,7 +114,7 @@ func runSecuritySocketConnectKprobes() {
 			eventPayload.DestIP = conv.ToIP4(event.Daddr)
 			eventPayload.DestPort = event.Dport
 			eventPayload.ASInfo = as.GetASInfo(eventPayload.DestIP)
-			eventPayload.Host = dns.GetHostname(event.Daddr, event.Pid)
+			eventPayload.Host = dnscache.GetHostname(event.Daddr, event.Pid)
 			out.PrintLine(eventPayload)
 		}
 	})()
@@ -247,7 +247,7 @@ func newGenericEventPayload(event *Event) eventPayload {
 
 func collectDNSEvent(event *DNSEvent) {
 	host := (*C.char)(unsafe.Pointer(&event.Host))
-	dns.AddIP4Entry(event.IP4Addr, event.Pid, C.GoString(host))
+	dnscache.AddIP4Entry(event.IP4Addr, event.Pid, C.GoString(host))
 }
 
 // DNSEvent is used for DNS Lookup events
