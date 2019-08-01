@@ -32,8 +32,8 @@ struct data_t {
     u32 pid;
     u64 delta;
     char comm[TASK_COMM_LEN];
-    u32 af1;
-    u32 daddr1; // At the moment we only read one IPv4 address.
+    u32 af;
+    u32 ip4addr;
     char host[80];
 } __attribute__((packed));
 
@@ -47,11 +47,13 @@ int getaddrinfo_entry(struct pt_regs *ctx, const char *node, const char *service
     if (!PT_REGS_PARM1(ctx))
         return 0;
     struct val_t val = {};
-    u32 pid = bpf_get_current_pid_tgid();
+    u32 pid = bpf_get_current_pid_tgid(); // TODO get correct PID
     if (bpf_get_current_comm(&val.comm, sizeof(val.comm)) == 0) {
         bpf_probe_read(&val.host, sizeof(val.host),
                        (void *)PT_REGS_PARM1(ctx));
-        val.pid = bpf_get_current_pid_tgid();
+        u64 pid_tgid = bpf_get_current_pid_tgid();
+        u32 pid = pid_tgid >> 32;
+        val.pid = pid;
         val.ts = bpf_ktime_get_ns();
         start.update(&pid, &val);
         currres.update(&pid, &res);
@@ -62,7 +64,9 @@ int getaddrinfo_return(struct pt_regs *ctx) {
     struct val_t *valp;
     struct data_t data = {};
     u64 delta;
-    u32 pid = bpf_get_current_pid_tgid();
+
+    u64 pid_tgid = bpf_get_current_pid_tgid();
+    u32 pid = pid_tgid >> 32;
     u64 tsp = bpf_ktime_get_ns();
     valp = start.lookup(&pid);
     if (valp == 0)
@@ -79,11 +83,11 @@ int getaddrinfo_return(struct pt_regs *ctx) {
     struct addrinfo **resx = *res;
     struct addrinfo *resxx = *resx;
 
-    data.af1 = resxx->ai_family;
+    data.af = resxx->ai_family;
 
-    if (data.af1 == AF_INET) {
+    if (data.af == AF_INET) {
         struct sockaddr_in *daddr = (struct sockaddr_in *)resxx->ai_addr;
-        bpf_probe_read(&data.daddr1, sizeof(data.daddr1), &daddr->sin_addr.s_addr);
+        bpf_probe_read(&data.ip4addr, sizeof(data.ip4addr), &daddr->sin_addr.s_addr);
     }
 
     data.pid = valp->pid;

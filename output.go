@@ -34,8 +34,8 @@ type tableOutput struct {
 }
 
 func (t tableOutput) PrintHeader() {
-	header := "%-12s %-14s %-6s %-36s %-16s %-20s %s\n"
-	args := []interface{}{"TIME", "AF", "PID", "PROCESS", "USER", "DESTINATION", "AS-INFO"}
+	header := "%-12s %-9s %-6s %-32s %-16s %-20s %-32s %s\n"
+	args := []interface{}{"TIME", "AF", "PID", "PROCESS", "USER", "DESTINATION", "HOST", "AS-INFO"}
 	fmt.Printf(header, args...)
 }
 
@@ -45,8 +45,8 @@ func (t tableOutput) PrintLine(e eventPayload) {
 	if (as.ASInfo{}) != e.ASInfo {
 		asText = "AS" + strconv.Itoa(int(e.ASInfo.AsNumber)) + " (" + e.ASInfo.Name + ")"
 	}
-	header := "%-12s %-14s %-6d %-36s %-16s %-20s %s\n"
-	args := []interface{}{e.Time, e.AddressFamily, e.Pid, e.ProcessPath, e.User, dest, asText}
+	header := "%-12s %-9s %-6d %-32s %-16s %-20s %-32s %s\n"
+	args := []interface{}{e.Time, e.AddressFamily, e.Pid, e.ProcessPath, e.User, dest, e.Host, asText}
 	fmt.Printf(header, args...)
 }
 

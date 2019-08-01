@@ -30,6 +30,7 @@ import (
 	bpf "github.com/iovisor/gobpf/bcc"
 	"github.com/p-/socket-connect-bpf/as"
 	"github.com/p-/socket-connect-bpf/conv"
+	"github.com/p-/socket-connect-bpf/dns"
 	"github.com/p-/socket-connect-bpf/linux"
 )
 
@@ -112,6 +113,7 @@ func runSecuritySocketConnectKprobes() {
 			eventPayload.DestIP = conv.ToIP4(event.Daddr)
 			eventPayload.DestPort = event.Dport
 			eventPayload.ASInfo = as.GetASInfo(eventPayload.DestIP)
+			eventPayload.Host = dns.GetHostname(event.Daddr, event.Pid)
 			out.PrintLine(eventPayload)
 		}
 	})()
@@ -191,6 +193,7 @@ func runDNSLookupKprobes() {
 			var event DNSEvent
 			data := <-channelTimings
 			binary.Read(bytes.NewBuffer(data), binary.LittleEndian, &event)
+			collectDNSEvent(&event)
 			printDNSEvent(&event)
 		}
 	})()
@@ -241,21 +244,26 @@ func newGenericEventPayload(event *Event) eventPayload {
 	return payload
 }
 
+func collectDNSEvent(event *DNSEvent) {
+	host := (*C.char)(unsafe.Pointer(&event.Host))
+	dns.AddIP4Entry(event.IP4Addr, event.Pid, C.GoString(host))
+}
+
 func printDNSEvent(event *DNSEvent) {
 	host := (*C.char)(unsafe.Pointer(&event.Host))
 	task := (*C.char)(unsafe.Pointer(&event.Task))
-	ip1 := conv.ToIP4(event.Daddr1)
-	log.Printf("PID: %d, Host: %s, Task %s, 1st AF %d, 1st IP %s", event.Pid, C.GoString(host), C.GoString(task), event.Af1, ip1)
+	ip := conv.ToIP4(event.IP4Addr)
+	log.Printf("PID: %d, Host: %s, Task %s, AF %d, IP %s", event.Pid, C.GoString(host), C.GoString(task), event.Af, ip)
 }
 
 // DNSEvent is used for DNS Lookup events
 type DNSEvent struct {
-	Pid    uint32
-	Delta  uint64
-	Task   [16]byte
-	Af1    uint32
-	Daddr1 uint32
-	Host   [80]byte
+	Pid     uint32
+	Delta   uint64
+	Task    [16]byte
+	Af      uint32
+	IP4Addr uint32
+	Host    [80]byte
 }
 
 // Event is a common event interface
@@ -294,6 +302,7 @@ type eventPayload struct {
 	ProcessPath   string
 	User          string
 	Comm          string
+	Host          string
 	DestIP        net.IP
 	DestPort      uint16
 	ASInfo        as.ASInfo
