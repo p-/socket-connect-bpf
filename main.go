@@ -17,6 +17,7 @@ package main
 import (
 	"bytes"
 	"encoding/binary"
+	"flag"
 	"fmt"
 	"log"
 	"net"
@@ -41,10 +42,21 @@ import "C"
 
 func main() {
 	log.Print("starting socket-connect-bpf")
-	as.ParseASNumbers("./as/ip2asn-v4-u32.tsv")
+	setupASNumbers()
 	setupWorkers()
 	listenToInterrupts()
 	//select {} // block forever
+}
+
+var out output
+
+func setupASNumbers() {
+	includeAsNumbers := flag.Bool("a", false, "include AS numbers in output")
+	flag.Parse()
+	if *includeAsNumbers {
+		as.ParseASNumbers("./as/ip2asn-v4-u32.tsv")
+	}
+	out = newOutput(*includeAsNumbers)
 }
 
 func setupWorkers() {
@@ -102,7 +114,6 @@ func runSecuritySocketConnectKprobes() {
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, os.Interrupt, os.Kill)
 
-	out := newOutput()
 	out.PrintHeader()
 
 	go (func() {

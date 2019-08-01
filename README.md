@@ -29,6 +29,9 @@ Run:
 
 ## AS Numbers
 
+The autonomous system (AS) that the IP address belongs to is not displayed by default.
+It can be turned on with the flag `-a`.
+
 AS Data of [IPtoASN](https://iptoasn.com/) is used.
 The local AS-Number lookup will require some more RAM.
 
