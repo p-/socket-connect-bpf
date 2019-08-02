@@ -269,8 +269,6 @@ func collectDNSEvent(event *DNSEvent) {
 // DNSEvent is used for DNS Lookup events
 type DNSEvent struct {
 	Pid      uint32
-	Delta    uint64
-	Task     [16]byte
 	Af       uint32
 	IP4Addr  uint32
 	IP6Addr1 uint64

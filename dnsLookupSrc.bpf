@@ -6,9 +6,9 @@
 #include <linux/in6.h>
 
 // Based on https://github.com/iovisor/bcc/blob/51d62d36bd072530a238ac147a61b631fdc44659/tools/gethostlatency.py
-// map to getaddrinfo and gethostbyname
+// map to getaddrinfo
 
-// Copied from: include/netdb.h
+// struct addrinfo copied from: include/netdb.h
 struct addrinfo
 {
   int ai_flags;         /* Input flags.  */
@@ -23,15 +23,11 @@ struct addrinfo
 
 struct val_t {
     u32 pid;
-    char comm[TASK_COMM_LEN];
     char host[80];
-    u64 ts;
 } __attribute__((packed));
 
 struct data_t {
     u32 pid;
-    u64 delta;
-    char comm[TASK_COMM_LEN];
     u32 af;
     u32 ip4addr;
     __int128 ip6addr;
@@ -48,30 +44,29 @@ int getaddrinfo_entry(struct pt_regs *ctx, const char *node, const char *service
     if (!PT_REGS_PARM1(ctx))
         return 0;
     struct val_t val = {};
-    if (bpf_get_current_comm(&val.comm, sizeof(val.comm)) == 0) {
-        bpf_probe_read(&val.host, sizeof(val.host),
-                       (void *)PT_REGS_PARM1(ctx));
-        u64 pid_tgid = bpf_get_current_pid_tgid();
-        u32 pid = pid_tgid >> 32;
-        val.pid = pid;
-        val.ts = bpf_ktime_get_ns();
-        start.update(&pid, &val);
-        currres.update(&pid, &res);
-    }
+
+    bpf_probe_read(&val.host, sizeof(val.host),
+                    (void *)PT_REGS_PARM1(ctx));
+    u64 pid_tgid = bpf_get_current_pid_tgid();
+    u32 pid = pid_tgid >> 32;
+    val.pid = pid;
+    start.update(&pid, &val);
+    currres.update(&pid, &res);
+    
     return 0;
 }
 int getaddrinfo_return(struct pt_regs *ctx) {
     struct val_t *valp;
     struct data_t data = {};
-    u64 delta;
 
     u64 pid_tgid = bpf_get_current_pid_tgid();
     u32 pid = pid_tgid >> 32;
-    u64 tsp = bpf_ktime_get_ns();
+
     valp = start.lookup(&pid);
-    if (valp == 0)
+    if (valp == 0) {
         return 0; // missed start
-    bpf_probe_read(&data.comm, sizeof(data.comm), valp->comm);
+    }
+
     bpf_probe_read(&data.host, sizeof(data.host), (void *)valp->host);
 
     struct addrinfo ***res;
@@ -94,7 +89,6 @@ int getaddrinfo_return(struct pt_regs *ctx) {
     }
 
     data.pid = valp->pid;
-    data.delta = tsp - valp->ts;
     events.perf_submit(ctx, &data, sizeof(data));
     start.delete(&pid);
     currres.delete(&pid);
