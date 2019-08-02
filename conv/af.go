@@ -2,6 +2,9 @@ package conv
 
 import "strconv"
 
+const AF_INET = 2
+const AF_INET6 = 10
+
 // ToAddressFamily converts an address family number to a string
 // e.g. 10 to AF_INET6
 func ToAddressFamily(afNum int) string {

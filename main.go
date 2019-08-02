@@ -125,7 +125,7 @@ func runSecuritySocketConnectKprobes() {
 			eventPayload.DestIP = conv.ToIP4(event.Daddr)
 			eventPayload.DestPort = event.Dport
 			eventPayload.ASInfo = as.GetASInfo(eventPayload.DestIP)
-			eventPayload.Host = dnscache.GetHostname(event.Daddr, event.Pid)
+			eventPayload.Host = dnscache.GetHostname4(event.Daddr, event.Pid)
 			out.PrintLine(eventPayload)
 		}
 	})()
@@ -138,6 +138,7 @@ func runSecuritySocketConnectKprobes() {
 			eventPayload := newGenericEventPayload(&event.Event)
 			eventPayload.DestIP = conv.ToIP6(event.Daddr1, event.Daddr2)
 			eventPayload.DestPort = event.Dport
+			eventPayload.Host = dnscache.GetHostname6(event.Daddr1, event.Daddr2, event.Pid)
 			out.PrintLine(eventPayload)
 		}
 	})()
@@ -258,17 +259,23 @@ func newGenericEventPayload(event *Event) eventPayload {
 
 func collectDNSEvent(event *DNSEvent) {
 	host := (*C.char)(unsafe.Pointer(&event.Host))
-	dnscache.AddIP4Entry(event.IP4Addr, event.Pid, C.GoString(host))
+	if event.Af == conv.AF_INET {
+		dnscache.AddIP4Entry(event.IP4Addr, event.Pid, C.GoString(host))
+	} else if event.Af == conv.AF_INET6 {
+		dnscache.AddIP6Entry(event.IP6Addr1, event.IP6Addr2, event.Pid, C.GoString(host))
+	}
 }
 
 // DNSEvent is used for DNS Lookup events
 type DNSEvent struct {
-	Pid     uint32
-	Delta   uint64
-	Task    [16]byte
-	Af      uint32
-	IP4Addr uint32
-	Host    [80]byte
+	Pid      uint32
+	Delta    uint64
+	Task     [16]byte
+	Af       uint32
+	IP4Addr  uint32
+	IP6Addr1 uint64
+	IP6Addr2 uint64
+	Host     [80]byte
 }
 
 // Event is a common event interface
