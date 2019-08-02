@@ -40,17 +40,17 @@ import "C"
 
 //go:generate go run bpf/includebpf.go
 
+var out output
+
 func main() {
 	log.Print("starting socket-connect-bpf")
-	setupASNumbers()
+	setupASNumbersIfNeeded()
 	setupWorkers()
 	listenToInterrupts()
 	//select {} // block forever
 }
 
-var out output
-
-func setupASNumbers() {
+func setupASNumbersIfNeeded() {
 	includeAsNumbers := flag.Bool("a", false, "include AS numbers in output")
 	flag.Parse()
 	if *includeAsNumbers {
@@ -190,11 +190,11 @@ func runDNSLookupKprobes() {
 
 	attachUretprobe(m, "getaddrinfo", getAddrinfoReturn)
 
-	tableTimings := bpf.NewTable(m.TableId("events"), m)
-	channelTimings := make(chan []byte)
-	mapTimings, err := bpf.InitPerfMap(tableTimings, channelTimings)
+	tableDNS := bpf.NewTable(m.TableId("events"), m)
+	channelDNS := make(chan []byte)
+	mapDNS, err := bpf.InitPerfMap(tableDNS, channelDNS)
 	if err != nil {
-		mapTimings = nil
+		mapDNS = nil
 	}
 
 	sig := make(chan os.Signal, 1)
@@ -203,18 +203,18 @@ func runDNSLookupKprobes() {
 	go (func() {
 		for {
 			var event DNSEvent
-			data := <-channelTimings
+			data := <-channelDNS
 			binary.Read(bytes.NewBuffer(data), binary.LittleEndian, &event)
 			collectDNSEvent(&event)
 		}
 	})()
 
-	if mapTimings != nil {
-		mapTimings.Start()
+	if mapDNS != nil {
+		mapDNS.Start()
 	}
 	<-sig
-	if mapTimings != nil {
-		mapTimings.Stop()
+	if mapDNS != nil {
+		mapDNS.Stop()
 	}
 }
 
