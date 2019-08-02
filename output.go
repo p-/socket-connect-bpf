@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"strconv"
-	"time"
 
 	"github.com/p-/socket-connect-bpf/as"
 )
@@ -13,24 +12,11 @@ type output interface {
 	PrintLine(eventPayload)
 }
 
-type timing struct {
-	start time.Time
-}
-
-func newTiming() timing {
-	return timing{time.Now()}
-}
-
-func (t timing) Now() float64 {
-	return time.Now().Sub(t.start).Seconds()
-}
-
 func newOutput(includeAsNumbers bool) output {
 	return newTableOutput(includeAsNumbers)
 }
 
 type tableOutput struct {
-	timing           timing
 	includeAsNumbers bool
 }
 
@@ -71,5 +57,5 @@ func (t tableOutput) PrintLine(e eventPayload) {
 }
 
 func newTableOutput(includeAsNumbers bool) output {
-	return &tableOutput{newTiming(), includeAsNumbers}
+	return &tableOutput{includeAsNumbers}
 }
