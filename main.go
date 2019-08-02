@@ -61,7 +61,7 @@ func setupASNumbersIfNeeded() {
 
 func setupWorkers() {
 	go runSecuritySocketConnectKprobes()
-	go runDNSLookupKprobes()
+	go runDNSLookupUprobes()
 }
 
 func listenToInterrupts() {
@@ -174,17 +174,17 @@ func runSecuritySocketConnectKprobes() {
 	}
 }
 
-func runDNSLookupKprobes() {
+func runDNSLookupUprobes() {
 	m := bpf.NewModule(dnsLookupSrc, []string{})
 	defer m.Close()
-	getAddrinfoEntry, err := m.LoadKprobe("getaddrinfo_entry")
+	getAddrinfoEntry, err := m.LoadUprobe("getaddrinfo_entry")
 	if err != nil {
-		log.Fatal("LoadKprobe failed!", err)
+		log.Fatal("LoadUprobe failed!", err)
 	}
 
 	getAddrinfoReturn, err := m.LoadUprobe("getaddrinfo_return")
 	if err != nil {
-		log.Fatal("LoadKprobe failed!", err)
+		log.Fatal("LoadUprobe failed!", err)
 	}
 
 	attachUprobe(m, "getaddrinfo", getAddrinfoEntry)
