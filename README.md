@@ -1,8 +1,11 @@
 # socket-connect-bpf
 
-BPF/eBPF prototype with a probe attached to `security_socket_connect` from [linux/security.h](https://github.com/torvalds/linux/blob/master/include/linux/security.h).
+socket-connect-bpf is a Linux command line utility that writes a new line with human-readable information about a connection to the standard output if a new connection to a remote or local target is made.
 
-This command line utility writes a new line with connection info to stdout if a new connection to a remote or local target is made.
+## Details
+socket-connect-bpf is a BPF/eBPF prototype with a kernel probe attached to `security_socket_connect` from [linux/security.h](https://github.com/torvalds/linux/blob/master/include/linux/security.h).
+
+To resolve IP addresses to hostnames a user probe to `getaddrinfo` is used.
 
 ## License
 The socket-connect-bpf Go code is licensed under the Apache License. The BPF code is licensed under GPL as some [BPF-helpers are GPL-only](https://github.com/iovisor/bcc/blob/master/docs/kernel-versions.md#helpers).
@@ -27,9 +30,9 @@ Run:
 
     sudo ./socket-connect-bpf
 
-## AS Numbers
+## Autonomous System (AS) Information
 
-The autonomous system (AS) that the IP address belongs to is not displayed by default.
+Information about an autonomous system (AS) that an IP address belongs to is not displayed by default.
 It can be turned on with the flag `-a`.
 
 AS Data of [IPtoASN](https://iptoasn.com/) is used.
