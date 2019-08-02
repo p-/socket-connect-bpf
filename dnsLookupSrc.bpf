@@ -48,7 +48,6 @@ int getaddrinfo_entry(struct pt_regs *ctx, const char *node, const char *service
     if (!PT_REGS_PARM1(ctx))
         return 0;
     struct val_t val = {};
-    u32 pid = bpf_get_current_pid_tgid(); // TODO get correct PID
     if (bpf_get_current_comm(&val.comm, sizeof(val.comm)) == 0) {
         bpf_probe_read(&val.host, sizeof(val.host),
                        (void *)PT_REGS_PARM1(ctx));
