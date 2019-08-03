@@ -43,7 +43,6 @@ import "C"
 var out output
 
 func main() {
-	log.Print("starting socket-connect-bpf")
 	setupASNumbersIfNeeded()
 	setupWorkers()
 	listenToInterrupts()
