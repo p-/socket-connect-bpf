@@ -1,0 +1,24 @@
+Demonstrations of socket-connect-bpf
+
+This tool traces the kernel functions performing active socket connections
+(eg, via a connect().
+socket-connect-bpf is a BPF/eBPF prototype with a kernel probe attached to
+`security_socket_connect`.
+
+Sample output for `curl github.com`
+
+ % sudo ./socket-connect-bpf
+TIME      AF        PID    PROCESS                            USER             DESTINATION          HOST
+17:15:58  AF_INET   8549   /usr/bin/curl                      xdp              127.0.0.53:53        
+17:15:58  AF_INET   419    /usr/lib/systemd/systemd-resolved  systemd-resolve  192.168.1.1:53       
+17:15:58  AF_INET   8549   /usr/bin/curl                      xdp              140.82.118.3:80      github.com
+
+
+Sample output for `curl github.com` with the -a flag (display AS information) in action.
+
+ % sudo ./socket-connect-bpf -a
+TIME      AF        PID    PROCESS                            USER             DESTINATION          HOST                             AS-INFO
+17:19:23  AF_INET   8817   /usr/bin/curl                      xdp              127.0.0.53:53                                         
+17:19:23  AF_INET   419    /usr/lib/systemd/systemd-resolved  systemd-resolve  192.168.1.1:53                                        
+17:19:23  AF_INET   419    /usr/lib/systemd/systemd-resolved  systemd-resolve  192.168.1.1:53                                        
+17:19:23  AF_INET   8817   /usr/bin/curl                      xdp              140.82.118.4:80      github.com                       AS36459 (GITHUB)

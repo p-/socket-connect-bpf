@@ -1,6 +1,10 @@
 # socket-connect-bpf
 
-socket-connect-bpf is a Linux command line utility that writes a new line with human-readable information about a connection to the standard output if a new connection to a remote or local target is made.
+socket-connect-bpf is a Linux command line utility that writes a new line with human-readable information about an outgoing connection to the standard output.
+
+![socket-connect-bpf while making a request with curl](samples/socket-connect-bpf.gif)
+
+More [sample output](samples/socket-connect-bpf-example.txt).
 
 ## Details
 socket-connect-bpf is a BPF/eBPF prototype with a kernel probe attached to `security_socket_connect` from [linux/security.h](https://github.com/torvalds/linux/blob/master/include/linux/security.h).
