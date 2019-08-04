@@ -4,7 +4,14 @@ socket-connect-bpf is a Linux command line utility that writes human-readable in
 
 ![socket-connect-bpf while making a request with curl](samples/socket-connect-bpf.gif)
 
-Following details are written:
+More [sample output](samples/socket-connect-bpf-example.txt).
+
+## Details
+socket-connect-bpf is a BPF/eBPF prototype with a kernel probe attached to [`security_socket_connect`](https://github.com/torvalds/linux/blob/master/include/linux/security.h).
+
+To resolve IP addresses to hostnames a user probe to `getaddrinfo` is used.
+
+Following information about each request is displayed if possible:
 
 | Name          | Description                                              | Sample           |
 | --------------|----------------------------------------------------------|------------------|
@@ -16,13 +23,6 @@ Following details are written:
 | Destination   | IP address and port of the destination.                  | 127.0.0.53:53    |
 | Host          | Hostname (if cached)                                     | github.com       |
 | AS-Info       | Info about the autonomous system (AS) of the IP address. | AS36459 (GITHUB) |
-
-More [sample output](samples/socket-connect-bpf-example.txt).
-
-## Details
-socket-connect-bpf is a BPF/eBPF prototype with a kernel probe attached to [`security_socket_connect`](https://github.com/torvalds/linux/blob/master/include/linux/security.h).
-
-To resolve IP addresses to hostnames a user probe to `getaddrinfo` is used.
 
 ## Use cases
 
