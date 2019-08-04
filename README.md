@@ -1,13 +1,13 @@
 # socket-connect-bpf
 
-socket-connect-bpf is a Linux command line utility that writes human-readable information about each application that makes new connections to the standard output.
+socket-connect-bpf is a Linux command line utility that writes human-readable information about each application that makes new (network) connections to the standard output.
 
 ![socket-connect-bpf while making a request with curl](samples/socket-connect-bpf.gif)
 
 More [sample output](samples/socket-connect-bpf-example.txt).
 
 ## Details
-socket-connect-bpf is a BPF/eBPF prototype with a kernel probe attached to [`security_socket_connect`](https://github.com/torvalds/linux/blob/master/include/linux/security.h).
+socket-connect-bpf is a BPF/eBPF prototype with a kernel probe attached to [`security_socket_connect`](https://github.com/torvalds/linux/blob/master/include/linux/security.h). Connections to AF_UNSPEC and AF_UNIX are explicitly excluded. 
 
 To resolve IP addresses to hostnames a user probe to `getaddrinfo` is used.
 
