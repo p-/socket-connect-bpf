@@ -1,5 +1,11 @@
 package dnscache
 
+import (
+	"net"
+
+	"github.com/p-/socket-connect-bpf/conv"
+)
+
 var dns4Cache = make(map[uint32]HostInfo)
 var dns6Cache = make(map[[2]uint64]HostInfo)
 
@@ -23,6 +29,16 @@ func GetHostname4(ip4 uint32, pid uint32) string {
 		return ""
 	}
 	return ""
+}
+
+// GetHostname gets a hostname for a cached IPv4 / PID combination
+func GetHostname(ip net.IP, pid uint32) string {
+	ip4 := ip.To4()
+	if ip4 == nil { // TODO also implement for IPv6
+		return ""
+	}
+	uip4 := conv.IP4ToUint(ip4)
+	return GetHostname4(uip4, pid)
 }
 
 // GetHostname6 gets a hostname for a cached IPv6 (network byte order) / PID combination

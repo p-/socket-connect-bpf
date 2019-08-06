@@ -30,3 +30,8 @@ func ToUint(ip net.IP) uint32 {
 	}
 	return binary.BigEndian.Uint32(ip)
 }
+
+// IP4ToUint converts an IPv4 address to an uint32 (Little Endian)
+func IP4ToUint(ip net.IP) uint32 {
+	return binary.LittleEndian.Uint32(ip.To4())
+}

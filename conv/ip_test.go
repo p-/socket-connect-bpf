@@ -36,3 +36,11 @@ func TestIp6ConversionWith6to4Address(t *testing.T) {
 		t.Errorf("ToIP6(18305688338976, 0) = %s; want %s", got, want)
 	}
 }
+
+func TestIP4ToUintConversionWithIPv4Address(t *testing.T) {
+	got := IP4ToUint(net.ParseIP("172.217.168.35"))
+	want := uint32(598268332)
+	if got != want {
+		t.Errorf("IP4ToUint(net.ParseIP(\"172.217.168.35\")) = %d; want %d", got, want)
+	}
+}

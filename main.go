@@ -137,7 +137,11 @@ func runSecuritySocketConnectKprobes() {
 			eventPayload := newGenericEventPayload(&event.Event)
 			eventPayload.DestIP = conv.ToIP6(event.Daddr1, event.Daddr2)
 			eventPayload.DestPort = event.Dport
-			eventPayload.Host = dnscache.GetHostname6(event.Daddr1, event.Daddr2, event.Pid)
+			host := dnscache.GetHostname6(event.Daddr1, event.Daddr2, event.Pid)
+			if host == "" {
+				host = dnscache.GetHostname(eventPayload.DestIP, event.Pid)
+			}
+			eventPayload.Host = host
 			out.PrintLine(eventPayload)
 		}
 	})()
