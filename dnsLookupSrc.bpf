@@ -76,7 +76,7 @@ int getaddrinfo_return(struct pt_regs *ctx) {
     struct addrinfo *resxx = *resx;
 
     #pragma unroll
-    for (int i = 0; i < 5; i++) //  Limit max entries that are considered
+    for (int i = 0; i < 9; i++) //  Limit max entries that are considered
     {
         struct data_t data = {};
         bpf_probe_read(&data.host, sizeof(data.host), (void *)valp->host);
