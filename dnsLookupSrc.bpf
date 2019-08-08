@@ -1,4 +1,5 @@
 /* vim: syntax=c */
+#include <uapi/linux/ptrace.h>
 #include <linux/sched.h>
 #include <linux/socket.h>
 #include <linux/in.h>
