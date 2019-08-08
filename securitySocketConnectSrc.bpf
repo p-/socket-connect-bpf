@@ -62,7 +62,10 @@ int security_socket_connect_entry(struct pt_regs *ctx, struct socket *sock, stru
         data4.dport = ntohs(dport);
 
         bpf_get_current_comm(&data4.task, sizeof(data4.task));
-        ipv4_events.perf_submit(ctx, &data4, sizeof(data4));
+
+        if (data4.dport != 0) {
+            ipv4_events.perf_submit(ctx, &data4, sizeof(data4));
+        }
     }
     else if (address_family == AF_INET6) {
         struct ipv6_event_t data6 = {.pid = pid, .uid = uid, .af = address_family};
@@ -77,7 +80,10 @@ int security_socket_connect_entry(struct pt_regs *ctx, struct socket *sock, stru
         data6.dport = ntohs(dport6);
 
         bpf_get_current_comm(&data6.task, sizeof(data6.task));
-        ipv6_events.perf_submit(ctx, &data6, sizeof(data6));
+
+        if (data6.dport != 0) {
+            ipv6_events.perf_submit(ctx, &data6, sizeof(data6));
+        }
     }
     else if (address_family != AF_UNIX && address_family != AF_UNSPEC) { // other sockets, except UNIX and UNSPEC sockets
         struct other_socket_event_t socket_event = {.pid = pid, .uid = uid, .af = address_family};
