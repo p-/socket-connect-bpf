@@ -46,7 +46,6 @@ func main() {
 	setupASNumbersIfNeeded()
 	setupWorkers()
 	listenToInterrupts()
-	//select {} // block forever
 }
 
 func setupASNumbersIfNeeded() {

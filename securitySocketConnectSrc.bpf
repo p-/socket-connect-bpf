@@ -1,11 +1,9 @@
 /* vim: syntax=c */
 #include <uapi/linux/ptrace.h>
-#include <net/sock.h>
 #include <linux/socket.h>
 #include <linux/in.h>
 #include <linux/in6.h>
 #include <linux/ip.h>
-#include <bcc/proto.h>
 
 struct ipv4_event_t {
     u64 ts_us;
