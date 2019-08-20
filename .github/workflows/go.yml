@@ -39,3 +39,6 @@ jobs:
       
     - name: Build
       run: go build -v .
+
+    - name: Smoke Test
+      run: sudo timeout 10s ./socket-connect-bpf
