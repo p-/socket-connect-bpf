@@ -33,6 +33,9 @@ jobs:
 
     - name: Generate BPF Sources
       run: go generate
+
+    - name: Execute Tests
+      run: go test ./...
       
     - name: Build
       run: go build -v .
