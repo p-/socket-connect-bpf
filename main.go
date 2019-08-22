@@ -43,18 +43,18 @@ import "C"
 var out output
 
 func main() {
-	setupASNumbersIfNeeded()
+	setupOutput()
 	setupWorkers()
 	listenToInterrupts()
 }
 
-func setupASNumbersIfNeeded() {
-	includeAsNumbers := flag.Bool("a", false, "include AS numbers in output")
+func setupOutput() {
+	printAll := flag.Bool("a", false, "print all (AS numbers and process arguments in output")
 	flag.Parse()
-	if *includeAsNumbers {
+	if *printAll {
 		as.ParseASNumbers("./as/ip2asn-v4-u32.tsv")
 	}
-	out = newOutput(*includeAsNumbers)
+	out = newOutput(*printAll)
 }
 
 func setupWorkers() {
@@ -247,12 +247,14 @@ func newGenericEventPayload(event *Event) eventPayload {
 		username = user.Username
 	}
 
+	pid := int(event.Pid)
 	payload := eventPayload{
 		KernelTime:    strconv.Itoa(int(event.TsUs)),
 		GoTime:        time.Now(),
 		AddressFamily: conv.ToAddressFamily(int(event.Af)),
 		Pid:           event.Pid,
-		ProcessPath:   linux.ProcessPathForPid(int(event.Pid)),
+		ProcessPath:   linux.ProcessPathForPid(pid),
+		ProcessArgs:   linux.ProcessArgsForPid(pid),
 		User:          username,
 		Comm:          C.GoString(task),
 	}
@@ -313,6 +315,7 @@ type eventPayload struct {
 	AddressFamily string
 	Pid           uint32
 	ProcessPath   string
+	ProcessArgs   string
 	User          string
 	Comm          string
 	Host          string

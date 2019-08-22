@@ -12,19 +12,19 @@ type output interface {
 	PrintLine(eventPayload)
 }
 
-func newOutput(includeAsNumbers bool) output {
-	return newTableOutput(includeAsNumbers)
+func newOutput(printAll bool) output {
+	return newTableOutput(printAll)
 }
 
 type tableOutput struct {
-	includeAsNumbers bool
+	printAll bool
 }
 
 func (t tableOutput) PrintHeader() {
 	var header string
 	var args []interface{}
-	if t.includeAsNumbers {
-		header = "%-9s %-9s %-6s %-34s %-16s %-20s %-32s %s\n"
+	if t.printAll {
+		header = "%-9s %-9s %-6s %-42s %-16s %-20s %-32s %s\n"
 		args = []interface{}{"TIME", "AF", "PID", "PROCESS", "USER", "DESTINATION", "HOST", "AS-INFO"}
 	} else {
 		header = "%-9s %-9s %-6s %-34s %-16s %-20s %s\n"
@@ -41,13 +41,13 @@ func (t tableOutput) PrintLine(e eventPayload) {
 	var header string
 	var args []interface{}
 
-	if t.includeAsNumbers {
+	if t.printAll {
 		var asText = ""
 		if (as.ASInfo{}) != e.ASInfo {
 			asText = "AS" + strconv.Itoa(int(e.ASInfo.AsNumber)) + " (" + e.ASInfo.Name + ")"
 		}
-		header = "%-9s %-9s %-6d %-34s %-16s %-20s %-32s %s\n"
-		args = []interface{}{time, e.AddressFamily, e.Pid, e.ProcessPath, e.User, dest, e.Host, asText}
+		header = "%-9s %-9s %-6d %-42s %-16s %-20s %-32s %s\n"
+		args = []interface{}{time, e.AddressFamily, e.Pid, e.ProcessPath + " " + e.ProcessArgs, e.User, dest, e.Host, asText}
 	} else {
 		header = "%-9s %-9s %-6d %-34s %-16s %-20s %s\n"
 		args = []interface{}{time, e.AddressFamily, e.Pid, e.ProcessPath, e.User, dest, e.Host}

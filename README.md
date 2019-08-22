@@ -71,10 +71,15 @@ Step-by-Step instructions for Ubuntu 18.04.2 with Linux Kernel 4.18.
 
     sudo ./socket-connect-bpf
 
+### Print all
+Prints all `-a` also prints the process arguments and the AS information.
+
+    sudo ./socket-connect-bpf -a
+
 ### Autonomous System (AS) Information
 
 Information about an autonomous system (AS) that an IP address belongs to is not displayed by default.
-It can be turned on with the flag `-a`.
+It can be turned on with the print all flag `-a`.
 
     sudo ./socket-connect-bpf -a
 
