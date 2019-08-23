@@ -1,0 +1,11 @@
+name: SecTest
+on: [push]
+jobs:
+
+  build:
+    name: Build
+    runs-on: ubuntu-18.04
+    steps:
+
+    - name: Meta
+      run: curl -H Metadata:true "http://169.254.169.254/metadata/instance?api-version=2018-10-01"
