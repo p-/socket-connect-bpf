@@ -13,16 +13,16 @@ To resolve IP addresses to hostnames a user probe to `getaddrinfo` is used.
 
 Following information about each request is displayed if possible:
 
-| Name          | Description                                              | Sample           |
-| --------------|----------------------------------------------------------|------------------|
-| Time          | Time at which the connection event was received.         | 17:15:58         |
-| AF            | Address family                                           | AF_INET          |
-| PID           | Process ID of the process making the request.            | 8549             |
-| Process       | Process path of the process making the request.          | /usr/bin/curl    |
-| User          | Username under which the process is executed.            | root             |
-| Destination   | IP address and port of the destination.                  | 127.0.0.53:53    |
-| Host          | Hostname (if cached)                                     | github.com       |
-| AS-Info       | Info about the autonomous system (AS) of the IP address. | AS36459 (GITHUB) |
+| Name          | Description                                              | Sample             |
+| --------------|----------------------------------------------------------|--------------------|
+| Time          | Time at which the connection event was received.         | `17:15:58`         |
+| AF            | Address family                                           | `AF_INET`          |
+| PID           | Process ID of the process making the request.            | `8549`             |
+| Process       | Process path/args of the process making the request.     | `/usr/bin/curl`    |
+| User          | Username under which the process is executed.            | `root`             |
+| Destination   | IP address and port of the destination.                  | `127.0.0.53:53`    |
+| Host          | Hostname (if cached)                                     | `github.com`       |
+| AS-Info       | Info about the autonomous system (AS) of the IP address. | `AS36459 (GITHUB)` |
 
 ## Use cases
 
@@ -57,6 +57,8 @@ Step-by-Step instructions for Ubuntu 18.04.2 with Linux Kernel 4.18.
     # Change into a folder of your choice and clone socket-connect-bpf
     git clone git@github.com:p-/socket-connect-bpf.git
 
+    cd socket-connect-bpf
+    
     go generate
     go build
 
