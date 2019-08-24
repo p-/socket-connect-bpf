@@ -45,7 +45,7 @@ The socket-connect-bpf Go code is licensed under the Apache License. The BPF cod
 ## Installation
 Step-by-Step instructions for Ubuntu 18.04.2 with Linux Kernel 4.18.
 
-    # Install Go (if not already installed)
+    # Install Go 1.12 or later (if not already installed)
     sudo apt install golang-go
 
     # Install Upstream BCC Tools for Ubuntu 18.04 (Bionic Beaver)
@@ -54,15 +54,8 @@ Step-by-Step instructions for Ubuntu 18.04.2 with Linux Kernel 4.18.
     sudo apt update
     sudo apt install bcc-tools libbcc-examples linux-headers-$(uname -r)
 
-    # Get dependencies
-    go get github.com/iovisor/gobpf
-
-    # Get socket-connect-bpf
-    go get github.com/p-/socket-connect-bpf
-
-    # Ignore the warning...
-
-    cd ~/go/src/github.com/p-/socket-connect-bpf/
+    # Change into a folder of your choice and clone socket-connect-bpf
+    git clone git@github.com:p-/socket-connect-bpf.git
 
     go generate
     go build
@@ -72,7 +65,7 @@ Step-by-Step instructions for Ubuntu 18.04.2 with Linux Kernel 4.18.
     sudo ./socket-connect-bpf
 
 ### Print all
-Prints all `-a` also prints the process arguments and the AS information.
+Print all `-a` also prints the process arguments and the AS information.
 
     sudo ./socket-connect-bpf -a
 
