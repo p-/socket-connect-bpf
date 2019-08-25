@@ -37,13 +37,14 @@ jobs:
 
     - name: Move Files To Create Build Artifact
       run: |
-       mkdir -p dist/as
-       mv ./socket-connect-bpf dist/
-       mv ./README.md dist/
-       mv as/ip2asn-v4-u32.tsv dist/as/
+        mkdir dist
+        #mkdir -p dist/as
+        mv ./socket-connect-bpf dist/
+        mv ./README.md dist/
+        #mv as/ip2asn-v4-u32.tsv dist/as/
 
     - name: Upload Artifact
       uses: actions/upload-artifact@master
       with:
-        name: socket-connect-bpf.zip
+        name: socket-connect-bpf
         path: ./dist
