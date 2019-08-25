@@ -35,11 +35,15 @@ jobs:
     - name: Smoke Test
       run: sudo timeout --preserve-status --signal=INT 10s ./socket-connect-bpf -a
 
-    - name: Create Build Artifact
-      run: tar cvzf socket-connect-bpf.tar.gz socket-connect-bpf README.md as/ip2asn-v4-u32.tsv
+    - name: Move Files To Create Build Artifact
+      run: |
+       mkdir -p dist/as
+       mv ./socket-connect-bpf dist/
+       mv ./README.md dist/
+       mv as/ip2asn-v4-u32.tsv dist/as/
 
     - name: Upload Artifact
       uses: actions/upload-artifact@master
       with:
-        name: socket-connect-bpf.tar.gz
-        path: .
+        name: socket-connect-bpf.zip
+        path: ./dist
