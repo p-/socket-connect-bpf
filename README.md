@@ -9,7 +9,7 @@ More [sample output](samples/socket-connect-bpf-example.txt).
 ## Details
 socket-connect-bpf is a BPF/eBPF prototype with a kernel probe attached to [`security_socket_connect`](https://github.com/torvalds/linux/blob/master/include/linux/security.h). Connections to AF_UNSPEC and AF_UNIX are explicitly excluded. 
 
-To resolve IP addresses to hostnames a user probe to `getaddrinfo` is used.
+To resolve IP addresses to hostnames a user probe attached to `getaddrinfo` is used.
 
 Following information about each request is displayed if possible:
 
@@ -45,8 +45,8 @@ The socket-connect-bpf Go code is licensed under the Apache License. The BPF cod
 ## Installation
 Step-by-Step instructions for Ubuntu 18.04.2 with Linux Kernel 4.18.
 
-    # Install Go 1.12 or later (if not already installed)
-    sudo apt install golang-go
+    # Install Go 1.11 or later (if not already installed)
+    sudo snap install --classic go
 
     # Install Upstream BCC Tools for Ubuntu 18.04 (Bionic Beaver)
     sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 4052245BD4284CDD
@@ -78,7 +78,7 @@ It can be turned on with the print all flag `-a`.
 
     sudo ./socket-connect-bpf -a
 
-AS Data of [IPtoASN](https://iptoasn.com/) is used.
+AS data of [IPtoASN](https://iptoasn.com/) is used.
 The local AS-Number lookup will require some more RAM.
 
 ## Development
