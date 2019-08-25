@@ -33,4 +33,13 @@ jobs:
       run: go build -v .
 
     - name: Smoke Test
-      run: sudo timeout --preserve-status --signal=INT 15s ./socket-connect-bpf -a
+      run: sudo timeout --preserve-status --signal=INT 10s ./socket-connect-bpf -a
+
+    - name: Create Build Artifact
+      run: tar cvzf socket-connect-bpf.tar.gz socket-connect-bpf README.md as/ip2asn-v4-u32.tsv
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@master
+      with:
+        name: socket-connect-bpf.tar.gz
+        path: .
