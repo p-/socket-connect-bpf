@@ -55,7 +55,7 @@ Step-by-Step instructions for Ubuntu 18.04.2 with Linux Kernel 4.18.
     sudo apt install bcc-tools libbcc-examples linux-headers-$(uname -r)
 
     # Change into a folder of your choice and clone socket-connect-bpf
-    git clone git@github.com:p-/socket-connect-bpf.git
+    git clone https://github.com/p-/socket-connect-bpf.git
 
     cd socket-connect-bpf
     
