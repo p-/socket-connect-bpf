@@ -40,11 +40,11 @@ jobs:
 
     - name: Move Files To Create Build Artifact
       run: |
-        mkdir dist
-        #mkdir -p dist/as
+        #mkdir dist
+        mkdir -p dist/as
         mv ./socket-connect-bpf dist/
         mv ./README.md dist/
-        #mv as/ip2asn-v4-u32.tsv dist/as/
+        mv as/ip2asn-v4-u32.tsv dist/as/
 
     - name: Upload Artifact
       uses: actions/upload-artifact@master
