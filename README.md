@@ -78,8 +78,13 @@ It can be turned on with the print all flag `-a`.
 
     sudo ./socket-connect-bpf -a
 
+#### AS data
 AS data of [IPtoASN](https://iptoasn.com/) is used.
 The local AS-Number lookup will require some more RAM.
+
+To update the local AS data file run:
+
+    ./updateASData.sh
 
 ## Development
 
