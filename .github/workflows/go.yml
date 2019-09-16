@@ -50,4 +50,4 @@ jobs:
       uses: actions/upload-artifact@master
       with:
         name: socket-connect-bpf
-        path: ./dist
+        path: dist
