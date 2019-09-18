@@ -43,6 +43,20 @@ The socket-connect-bpf Go code is licensed under the Apache License. The BPF cod
 
 
 ## Installation
+
+### Install Binaries
+Instructions tested on Ubuntu 18.04.2 with Linux Kernel 4.18.
+
+* Install Upstream BCC Tools for Ubuntu 18.04 (Bionic Beaver):
+
+        sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 4052245BD4284CDD
+        echo "deb https://repo.iovisor.org/apt/$(lsb_release -cs) $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/iovisor.list
+        sudo apt update
+        sudo apt install bcc-tools libbcc-examples linux-headers-$(uname -r)
+
+* Extract `socket-connect-bpf-x.y.tar.gz` from a [release](https://github.com/p-/socket-connect-bpf/releases).
+
+### Build code from repository
 Step-by-Step instructions for Ubuntu 18.04.2 with Linux Kernel 4.18.
 
     # Install Go 1.11 or later (if not already installed)
@@ -82,7 +96,7 @@ It can be turned on with the print all flag `-a`.
 AS data of [IPtoASN](https://iptoasn.com/) is used.
 The local AS-Number lookup will require some more RAM.
 
-To update the local AS data file run:
+To update the AS data used while developing run:
 
     ./updateASData.sh
 
