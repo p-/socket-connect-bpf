@@ -18,7 +18,7 @@ Sample output for `curl github.com` with the -a flag (display AS information) in
 
  % sudo ./socket-connect-bpf -a
 TIME      AF        PID    PROCESS                            USER             DESTINATION          HOST                             AS-INFO
-17:19:23  AF_INET   8817   /usr/bin/curl                      xdp              127.0.0.53:53                                         
+17:19:23  AF_INET   8817   /usr/bin/curl github.com           xdp              127.0.0.53:53                                         
 17:19:23  AF_INET   419    /usr/lib/systemd/systemd-resolved  systemd-resolve  192.168.1.1:53                                        
 17:19:23  AF_INET   419    /usr/lib/systemd/systemd-resolved  systemd-resolve  192.168.1.1:53                                        
-17:19:23  AF_INET   8817   /usr/bin/curl                      xdp              140.82.118.4:80      github.com                       AS36459 (GITHUB)
+17:19:23  AF_INET   8817   /usr/bin/curl github.com           xdp              140.82.118.4:80      github.com                       AS36459 (GITHUB)
