@@ -12,13 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:build linux
+// +build linux
+
 package main
 
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"flag"
-	"fmt"
 	"log"
 	"net"
 	"os"
@@ -29,7 +32,9 @@ import (
 	"time"
 	"unsafe"
 
-	bpf "github.com/iovisor/gobpf/bcc"
+	"github.com/cilium/ebpf/link"
+	"github.com/cilium/ebpf/perf"
+	"github.com/cilium/ebpf/rlimit"
 	"github.com/p-/socket-connect-bpf/as"
 	"github.com/p-/socket-connect-bpf/conv"
 	"github.com/p-/socket-connect-bpf/dnscache"
@@ -38,14 +43,13 @@ import (
 
 import "C"
 
-//go:generate go run bpf/includebpf.go
+//go:generate go run github.com/cilium/ebpf/cmd/bpf2go -cc clang-12 -cflags "-O2 -g -Wall -Werror" bpf securitySocketConnectSrc.c -- -Iheaders/
 
 var out output
 
 func main() {
 	setupOutput()
 	setupWorkers()
-	listenToInterrupts()
 }
 
 func setupOutput() {
@@ -58,182 +62,181 @@ func setupOutput() {
 }
 
 func setupWorkers() {
-	go runSecuritySocketConnectKprobes()
-	go runDNSLookupUprobes()
-}
+	fn := "security_socket_connect"
 
-func listenToInterrupts() {
-	sigs := make(chan os.Signal, 1)
-	done := make(chan bool, 1)
+	stopper := make(chan os.Signal, 1)
+	signal.Notify(stopper, os.Interrupt, syscall.SIGTERM)
 
-	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+	// Allow the current process to lock memory for eBPF resources.
+	if err := rlimit.RemoveMemlock(); err != nil {
+		log.Fatal(err)
+	}
+
+	// Load pre-compiled programs and maps into the kernel.
+	objs := bpfObjects{}
+	if err := loadBpfObjects(&objs, nil); err != nil {
+		log.Fatalf("loading objects: %v", err)
+	}
+	defer objs.Close()
+
+	kp, err := link.Kprobe(fn, objs.KprobeSecuritySocketConnect)
+	if err != nil {
+		log.Fatalf("opening kprobe: %s", err)
+	}
+	defer kp.Close()
+
+	rd4, err := perf.NewReader(objs.Ipv4Events, os.Getpagesize())
+	if err != nil {
+		log.Fatalf("creating perf event reader: %s", err)
+	}
+	defer rd4.Close()
+
+	rd6, err := perf.NewReader(objs.Ipv6Events, os.Getpagesize())
+	if err != nil {
+		log.Fatalf("creating perf event reader: %s", err)
+	}
+	defer rd6.Close()
+
+	rdOther, err := perf.NewReader(objs.OtherSocketEvents, os.Getpagesize())
+	if err != nil {
+		log.Fatalf("creating perf event reader: %s", err)
+	}
+	defer rdOther.Close()
 
 	go func() {
-		sig := <-sigs
-		fmt.Println()
-		fmt.Println(sig)
-		done <- true
+		<-stopper
+		log.Println("Received signal, exiting program..")
+
+		if err := rd4.Close(); err != nil {
+			log.Fatalf("closing perf event reader: %s", err)
+		}
+
+		if err := rd6.Close(); err != nil {
+			log.Fatalf("closing perf event reader: %s", err)
+		}
+
+		if err := rdOther.Close(); err != nil {
+			log.Fatalf("closing perf event reader: %s", err)
+		}
 	}()
-
-	<-done
-}
-
-func runSecuritySocketConnectKprobes() {
-	m := bpf.NewModule(securitySocketConnectSrc, []string{})
-	defer m.Close()
-	securitySocketConnectEntry, err := m.LoadKprobe("security_socket_connect_entry")
-	if err != nil {
-		log.Fatal("LoadKprobe failed!", err)
-	}
-
-	err = m.AttachKprobe("security_socket_connect", securitySocketConnectEntry, -1)
-
-	table4 := bpf.NewTable(m.TableId("ipv4_events"), m)
-	channel4 := make(chan []byte)
-	map4, err := bpf.InitPerfMap(table4, channel4)
-	if err != nil {
-		map4 = nil
-	}
-
-	table6 := bpf.NewTable(m.TableId("ipv6_events"), m)
-	channel6 := make(chan []byte)
-	map6, err := bpf.InitPerfMap(table6, channel6)
-	if err != nil {
-		map6 = nil
-	}
-
-	otherTable := bpf.NewTable(m.TableId("other_socket_events"), m)
-	otherChannel := make(chan []byte)
-	otherMap, err := bpf.InitPerfMap(otherTable, otherChannel)
-	if err != nil {
-		otherMap = nil
-	}
-
-	sig := make(chan os.Signal, 1)
-	signal.Notify(sig, os.Interrupt, os.Kill)
 
 	out.PrintHeader()
 
-	go (func() {
-		for {
-			var event IP4Event
-			data := <-channel4
-			binary.Read(bytes.NewBuffer(data), binary.LittleEndian, &event)
-			eventPayload := newGenericEventPayload(&event.Event)
-			eventPayload.DestIP = conv.ToIP4(event.Daddr)
-			eventPayload.DestPort = event.Dport
-			eventPayload.ASInfo = as.GetASInfo(eventPayload.DestIP)
-			eventPayload.Host = dnscache.GetHostname4(event.Daddr, event.Pid)
-			out.PrintLine(eventPayload)
-		}
-	})()
-
-	go (func() {
-		for {
-			var event IP6Event
-			data := <-channel6
-			binary.Read(bytes.NewBuffer(data), binary.LittleEndian, &event)
-			eventPayload := newGenericEventPayload(&event.Event)
-			eventPayload.DestIP = conv.ToIP6(event.Daddr1, event.Daddr2)
-			eventPayload.DestPort = event.Dport
-			host := dnscache.GetHostname6(event.Daddr1, event.Daddr2, event.Pid)
-			if host == "" {
-				host = dnscache.GetHostname(eventPayload.DestIP, event.Pid)
-			}
-			eventPayload.Host = host
-			out.PrintLine(eventPayload)
-		}
-	})()
-
-	go (func() {
-		for {
-			var event OtherSocketEvent
-			data := <-otherChannel
-			binary.Read(bytes.NewBuffer(data), binary.LittleEndian, &event)
-			eventPayload := newGenericEventPayload(&event.Event)
-			out.PrintLine(eventPayload)
-		}
-	})()
-
-	if map4 != nil {
-		map4.Start()
-	}
-	if map6 != nil {
-		map6.Start()
-	}
-	if otherMap != nil {
-		otherMap.Start()
-	}
-	<-sig
-	if map4 != nil {
-		map4.Stop()
-	}
-	if map6 != nil {
-		map6.Stop()
-	}
-	if otherMap != nil {
-		otherMap.Stop()
-	}
-}
-
-func runDNSLookupUprobes() {
-	m := bpf.NewModule(dnsLookupSrc, []string{})
-	defer m.Close()
-	getAddrinfoEntry, err := m.LoadUprobe("getaddrinfo_entry")
-	if err != nil {
-		log.Fatal("LoadUprobe failed!", err)
-	}
-
-	getAddrinfoReturn, err := m.LoadUprobe("getaddrinfo_return")
-	if err != nil {
-		log.Fatal("LoadUprobe failed!", err)
-	}
-
-	attachUprobe(m, "getaddrinfo", getAddrinfoEntry)
-
-	attachUretprobe(m, "getaddrinfo", getAddrinfoReturn)
-
-	tableDNS := bpf.NewTable(m.TableId("events"), m)
-	channelDNS := make(chan []byte)
-	mapDNS, err := bpf.InitPerfMap(tableDNS, channelDNS)
-	if err != nil {
-		mapDNS = nil
-	}
-
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, os.Interrupt, os.Kill)
 
 	go (func() {
 		for {
-			var event DNSEvent
-			data := <-channelDNS
-			binary.Read(bytes.NewBuffer(data), binary.LittleEndian, &event)
-			collectDNSEvent(&event)
+			if !readIP4Events(rd4) {
+				return
+			}
 		}
 	})()
 
-	if mapDNS != nil {
-		mapDNS.Start()
-	}
+	go (func() {
+		for {
+			if !readIP6Events(rd6) {
+				return
+			}
+		}
+	})()
+
+	go (func() {
+		if !readOtherEvents(rdOther) {
+			return
+		}
+	})()
+
 	<-sig
-	if mapDNS != nil {
-		mapDNS.Stop()
-	}
 }
 
-func attachUprobe(module *bpf.Module, functionName string, bpfProgram int) {
-	err := module.AttachUprobe("c", functionName, bpfProgram, -1)
+func readIP4Events(rd *perf.Reader) bool {
+	var event IP4Event
+	record, err := rd.Read()
 	if err != nil {
-		log.Fatal("AttachUprobe failed!", err)
+		if errors.Is(err, perf.ErrClosed) {
+			return false
+		}
+		log.Printf("reading from perf event reader: %s", err)
+		return true
 	}
 
+	if record.LostSamples != 0 {
+		log.Printf("perf event ring buffer full, dropped %d samples", record.LostSamples)
+		return true
+	}
+
+	if err := binary.Read(bytes.NewBuffer(record.RawSample), binary.LittleEndian, &event); err != nil {
+		log.Printf("parsing perf event: %s", err)
+		return true
+	}
+
+	eventPayload := newGenericEventPayload(&event.Event)
+	eventPayload.DestIP = conv.ToIP4(event.Daddr)
+	eventPayload.DestPort = event.Dport
+	eventPayload.ASInfo = as.GetASInfo(eventPayload.DestIP)
+	eventPayload.Host = dnscache.GetHostname4(event.Daddr, event.Pid)
+	out.PrintLine(eventPayload)
+	return true
 }
 
-func attachUretprobe(module *bpf.Module, functionName string, bpfProgram int) {
-	err := module.AttachUretprobe("c", functionName, bpfProgram, -1)
+func readIP6Events(rd *perf.Reader) bool {
+	var event IP6Event
+	record, err := rd.Read()
 	if err != nil {
-		log.Fatal("AttachUretprobe failed!", err)
+		if errors.Is(err, perf.ErrClosed) {
+			return false
+		}
+		log.Printf("reading from perf event reader: %s", err)
+		return true
 	}
+
+	if record.LostSamples != 0 {
+		log.Printf("perf event ring buffer full, dropped %d samples", record.LostSamples)
+		return true
+	}
+
+	if err := binary.Read(bytes.NewBuffer(record.RawSample), binary.LittleEndian, &event); err != nil {
+		log.Printf("parsing perf event: %s", err)
+		return true
+	}
+
+	eventPayload := newGenericEventPayload(&event.Event)
+	eventPayload.DestIP = conv.ToIP6(event.Daddr1, event.Daddr2)
+	eventPayload.DestPort = event.Dport
+	host := dnscache.GetHostname6(event.Daddr1, event.Daddr2, event.Pid)
+	if host == "" {
+		host = dnscache.GetHostname(eventPayload.DestIP, event.Pid)
+	}
+	eventPayload.Host = host
+	out.PrintLine(eventPayload)
+	return true
+}
+
+func readOtherEvents(rd *perf.Reader) bool {
+	var event OtherSocketEvent
+	record, err := rd.Read()
+	if err != nil {
+		if errors.Is(err, perf.ErrClosed) {
+			return false
+		}
+		log.Printf("reading from perf event reader: %s", err)
+		return true
+	}
+
+	if record.LostSamples != 0 {
+		log.Printf("perf event ring buffer full, dropped %d samples", record.LostSamples)
+		return true
+	}
+
+	if err := binary.Read(bytes.NewBuffer(record.RawSample), binary.LittleEndian, &event); err != nil {
+		log.Printf("parsing perf event: %s", err)
+		return true
+	}
+
+	eventPayload := newGenericEventPayload(&event.Event)
+	out.PrintLine(eventPayload)
+	return true
 }
 
 func newGenericEventPayload(event *Event) eventPayload {
@@ -259,25 +262,6 @@ func newGenericEventPayload(event *Event) eventPayload {
 		Comm:          C.GoString(task),
 	}
 	return payload
-}
-
-func collectDNSEvent(event *DNSEvent) {
-	host := (*C.char)(unsafe.Pointer(&event.Host))
-	if event.Af == conv.AF_INET {
-		dnscache.AddIP4Entry(event.IP4Addr, event.Pid, C.GoString(host))
-	} else if event.Af == conv.AF_INET6 {
-		dnscache.AddIP6Entry(event.IP6Addr1, event.IP6Addr2, event.Pid, C.GoString(host))
-	}
-}
-
-// DNSEvent is used for DNS Lookup events
-type DNSEvent struct {
-	Pid      uint32
-	Af       uint32
-	IP4Addr  uint32
-	IP6Addr1 uint64
-	IP6Addr2 uint64
-	Host     [80]byte
 }
 
 // Event is a common event interface

@@ -39,7 +39,6 @@ The socket-connect-bpf Go code is licensed under the Apache License. The BPF cod
 * x64 CPU(s)
 * Recent Linux Kernel: 4.15 or later
 * [Go](https://golang.org/)
-* upstream [bpfcc-tools](https://github.com/iovisor/bcc/blob/master/INSTALL.md#ubuntu---binary)
 
 
 ## Installation
