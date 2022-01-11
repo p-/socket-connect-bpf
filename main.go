@@ -37,7 +37,6 @@ import (
 	"github.com/cilium/ebpf/rlimit"
 	"github.com/p-/socket-connect-bpf/as"
 	"github.com/p-/socket-connect-bpf/conv"
-	"github.com/p-/socket-connect-bpf/dnscache"
 	"github.com/p-/socket-connect-bpf/linux"
 )
 
@@ -175,7 +174,6 @@ func readIP4Events(rd *perf.Reader) bool {
 	eventPayload.DestIP = conv.ToIP4(event.Daddr)
 	eventPayload.DestPort = event.Dport
 	eventPayload.ASInfo = as.GetASInfo(eventPayload.DestIP)
-	eventPayload.Host = dnscache.GetHostname4(event.Daddr, event.Pid)
 	out.PrintLine(eventPayload)
 	return true
 }
@@ -204,11 +202,6 @@ func readIP6Events(rd *perf.Reader) bool {
 	eventPayload := newGenericEventPayload(&event.Event)
 	eventPayload.DestIP = conv.ToIP6(event.Daddr1, event.Daddr2)
 	eventPayload.DestPort = event.Dport
-	host := dnscache.GetHostname6(event.Daddr1, event.Daddr2, event.Pid)
-	if host == "" {
-		host = dnscache.GetHostname(eventPayload.DestIP, event.Pid)
-	}
-	eventPayload.Host = host
 	out.PrintLine(eventPayload)
 	return true
 }
