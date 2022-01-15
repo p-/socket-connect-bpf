@@ -15,7 +15,7 @@ struct ipv4_event_t {
     u64 ts_us;
     u32 pid;
     u32 uid;
-    u32 af;
+    u16 af;
     char task[TASK_COMM_LEN];
     u32 daddr;
     u16 dport;
@@ -31,7 +31,7 @@ struct ipv6_event_t {
     u64 ts_us;
     u32 pid;
     u32 uid;
-    u32 af;
+    u16 af;
     char task[TASK_COMM_LEN];
     unsigned __int128 daddr;
     u16 dport;
@@ -46,7 +46,7 @@ struct other_socket_event_t {
     u64 ts_us;
     u32 pid;
     u32 uid;
-    u32 af;
+    u16 af;
     char task[TASK_COMM_LEN];
 } __attribute__((packed));
 

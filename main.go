@@ -262,7 +262,7 @@ type Event struct {
 	TsUs uint64
 	Pid  uint32
 	UID  uint32
-	Af   uint32 // Address Family
+	Af   uint16 // Address Family
 	Task [16]byte
 }
 
