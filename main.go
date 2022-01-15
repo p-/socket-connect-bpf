@@ -30,7 +30,6 @@ import (
 	"strconv"
 	"syscall"
 	"time"
-	"unsafe"
 
 	"github.com/cilium/ebpf/link"
 	"github.com/cilium/ebpf/perf"
@@ -38,9 +37,8 @@ import (
 	"github.com/p-/socket-connect-bpf/as"
 	"github.com/p-/socket-connect-bpf/conv"
 	"github.com/p-/socket-connect-bpf/linux"
+	"golang.org/x/sys/unix"
 )
-
-import "C"
 
 //go:generate go run github.com/cilium/ebpf/cmd/bpf2go -cc clang-12 -cflags "-O2 -g -Wall -Werror" bpf securitySocketConnectSrc.c -- -Iheaders/
 
@@ -233,8 +231,6 @@ func readOtherEvents(rd *perf.Reader) bool {
 }
 
 func newGenericEventPayload(event *Event) eventPayload {
-	task := (*C.char)(unsafe.Pointer(&event.Task))
-
 	username := strconv.Itoa(int(event.UID))
 	user, err := user.LookupId(username)
 	if err != nil {
@@ -252,7 +248,7 @@ func newGenericEventPayload(event *Event) eventPayload {
 		ProcessPath:   linux.ProcessPathForPid(pid),
 		ProcessArgs:   linux.ProcessArgsForPid(pid),
 		User:          username,
-		Comm:          C.GoString(task),
+		Comm:          unix.ByteSliceToString(event.Task[:]),
 	}
 	return payload
 }
