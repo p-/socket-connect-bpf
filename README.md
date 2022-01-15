@@ -9,8 +9,6 @@ More [sample output](samples/socket-connect-bpf-example.txt).
 ## Details
 socket-connect-bpf is a BPF/eBPF prototype with a kernel probe attached to [`security_socket_connect`](https://github.com/torvalds/linux/blob/master/include/linux/security.h). Connections to AF_UNSPEC and AF_UNIX are explicitly excluded. 
 
-To resolve IP addresses to hostnames a user probe attached to `getaddrinfo` is used.
-
 Following information about each request is displayed if possible:
 
 | Name          | Description                                              | Sample             |
@@ -21,7 +19,6 @@ Following information about each request is displayed if possible:
 | Process       | Process path/args of the process making the request.     | `/usr/bin/curl`    |
 | User          | Username under which the process is executed.            | `root`             |
 | Destination   | IP address and port of the destination.                  | `127.0.0.53:53`    |
-| Host          | Hostname (if cached)                                     | `github.com`       |
 | AS-Info       | Info about the autonomous system (AS) of the IP address. | `AS36459 (GITHUB)` |
 
 ## Use cases
@@ -36,37 +33,30 @@ You might want to try `socket-connect-bpf` for the following use cases:
 The socket-connect-bpf Go code is licensed under the Apache License. The BPF code is licensed under GPL as some [BPF-helpers are GPL-only](https://github.com/iovisor/bcc/blob/master/docs/kernel-versions.md#helpers).
 
 ## Requirements
-* x64 CPU(s)
+* x64 CPU (Arm64 support is currently incubating)
 * Recent Linux Kernel: 4.15 or later
 * [Go](https://golang.org/)
-* upstream [bpfcc-tools](https://github.com/iovisor/bcc/blob/master/INSTALL.md#ubuntu---binary)
 
 
 ## Installation
 
-### Install Binaries
-Instructions tested on Ubuntu 18.04.2 with Linux Kernel 4.18.
+### Install Binaries (Version 0.4.0 or later)
+Instructions tested on Ubuntu 20.04 with Linux Kernel 5.11.
 
-* Install Upstream BCC Tools for Ubuntu 18.04 (Bionic Beaver):
+* Extract `socket-connect-bpf-x.y.tar.gz` (Version 0.4.0 or later) a [release](https://github.com/p-/socket-connect-bpf/releases).
 
-        sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 4052245BD4284CDD
-        echo "deb https://repo.iovisor.org/apt/$(lsb_release -cs) $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/iovisor.list
-        sudo apt update
-        sudo apt install bcc-tools libbcc-examples linux-headers-$(uname -r)
+Tarballs and can be verified with [minisign](https://github.com/jedisct1/minisign) and following public key:
 
-* Extract `socket-connect-bpf-x.y.tar.gz` from a [release](https://github.com/p-/socket-connect-bpf/releases).
+RWRUqB/iFRENms4B2LbOrNGizwXbStkIPE8sUq01r63cXJP8kzHp+ITv
 
 ### Build code from repository
-Step-by-Step instructions for Ubuntu 18.04.2 with Linux Kernel 4.18.
+Step-by-Step instructions for Ubuntu 20.04 with Linux Kernel 5.11.
 
-    # Install Go 1.11 or later (if not already installed)
+    # Install Go 1.17 or later (if not already installed)
     sudo snap install --classic go
 
-    # Install Upstream BCC Tools for Ubuntu 18.04 (Bionic Beaver)
-    sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 4052245BD4284CDD
-    echo "deb https://repo.iovisor.org/apt/$(lsb_release -cs) $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/iovisor.list
-    sudo apt update
-    sudo apt install bcc-tools libbcc-examples linux-headers-$(uname -r)
+    # Install Clang 12 (for compiling the BPF sources)
+    sudo apt install clang-12
 
     # Change into a folder of your choice and clone socket-connect-bpf
     git clone https://github.com/p-/socket-connect-bpf.git
@@ -108,4 +98,4 @@ Run tests:
     go test ./...
 
 ### IDE
-[VS Code](https://code.visualstudio.com/) can be used for development. The committed `settings.json` file highlights `*.bpf` files as C files.
+[VS Code](https://code.visualstudio.com/) or any other Go Lang IDE can be used for development.

@@ -1,3 +1,7 @@
 socket-connect-bpf
 TODO.md
-bpffiles.go
+
+# generated files
+*.o
+bpf_bpfeb.go
+bpf_bpfel.go

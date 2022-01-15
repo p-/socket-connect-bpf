@@ -24,11 +24,11 @@ func (t tableOutput) PrintHeader() {
 	var header string
 	var args []interface{}
 	if t.printAll {
-		header = "%-9s %-9s %-6s %-42s %-16s %-20s %-32s %s\n"
-		args = []interface{}{"TIME", "AF", "PID", "PROCESS", "USER", "DESTINATION", "HOST", "AS-INFO"}
+		header = "%-9s %-9s %-6s %-42s %-16s %-20s %s\n"
+		args = []interface{}{"TIME", "AF", "PID", "PROCESS", "USER", "DESTINATION", "AS-INFO"}
 	} else {
-		header = "%-9s %-9s %-6s %-34s %-16s %-20s %s\n"
-		args = []interface{}{"TIME", "AF", "PID", "PROCESS", "USER", "DESTINATION", "HOST"}
+		header = "%-9s %-9s %-6s %-34s %-16s %-20s\n"
+		args = []interface{}{"TIME", "AF", "PID", "PROCESS", "USER", "DESTINATION"}
 	}
 
 	fmt.Printf(header, args...)
@@ -46,11 +46,11 @@ func (t tableOutput) PrintLine(e eventPayload) {
 		if (as.ASInfo{}) != e.ASInfo {
 			asText = "AS" + strconv.Itoa(int(e.ASInfo.AsNumber)) + " (" + e.ASInfo.Name + ")"
 		}
-		header = "%-9s %-9s %-6d %-42s %-16s %-20s %-32s %s\n"
-		args = []interface{}{time, e.AddressFamily, e.Pid, e.ProcessPath + " " + e.ProcessArgs, e.User, dest, e.Host, asText}
+		header = "%-9s %-9s %-6d %-42s %-16s %-20s %s\n"
+		args = []interface{}{time, e.AddressFamily, e.Pid, e.ProcessPath + " " + e.ProcessArgs, e.User, dest, asText}
 	} else {
-		header = "%-9s %-9s %-6d %-34s %-16s %-20s %s\n"
-		args = []interface{}{time, e.AddressFamily, e.Pid, e.ProcessPath, e.User, dest, e.Host}
+		header = "%-9s %-9s %-6d %-34s %-16s %-20s\n"
+		args = []interface{}{time, e.AddressFamily, e.Pid, e.ProcessPath, e.User, dest}
 	}
 
 	fmt.Printf(header, args...)
