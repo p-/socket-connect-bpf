@@ -45,6 +45,10 @@ Instructions tested on Ubuntu 20.04 with Linux Kernel 5.11.
 
 * Extract `socket-connect-bpf-x.y.tar.gz` (Version 0.4.0 or later) a [release](https://github.com/p-/socket-connect-bpf/releases).
 
+Tarballs and can be verified with [minisign](https://github.com/jedisct1/minisign) and following public key:
+
+RWRUqB/iFRENms4B2LbOrNGizwXbStkIPE8sUq01r63cXJP8kzHp+ITv
+
 ### Build code from repository
 Step-by-Step instructions for Ubuntu 20.04 with Linux Kernel 5.11.
 

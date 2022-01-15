@@ -38,7 +38,7 @@ jobs:
         mv ./README.md dist/
         mv as/ip2asn-v4-u32.tsv dist/as/
         mkdir artifacts
-        tar czf artifacts/socket-connect-bpf.tar.gz --directory=dist/ .
+        tar czf artifacts/socket-connect-bpf-linux-x64.tar.gz --directory=dist/ .
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v2
