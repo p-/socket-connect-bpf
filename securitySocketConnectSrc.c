@@ -76,7 +76,7 @@ int kprobe_security_socket_connect(struct pt_regs *ctx) {
         bpf_probe_read(&data4.daddr, sizeof(data4.daddr), &daddr->sin_addr.s_addr);
 
         u16 dport = 0;
-        bpf_probe_read(&dport, sizeof(dport), &daddr->sin_port); // TODO is this the right port?
+        bpf_probe_read(&dport, sizeof(dport), &daddr->sin_port);
         data4.dport = bpf_ntohs(dport);
 
         bpf_get_current_comm(&data4.task, sizeof(data4.task));
@@ -103,7 +103,7 @@ int kprobe_security_socket_connect(struct pt_regs *ctx) {
             bpf_perf_event_output(ctx, &ipv6_events, BPF_F_CURRENT_CPU, &data6, sizeof(data6));
         }
     }
-    else if (address_family != AF_UNIX && address_family != AF_UNSPEC) { // other sockets, except UNIX and UNSPEC sockets
+    else if (address_family != AF_UNIX && address_family != AF_UNSPEC) { // other address families, except UNIX and UNSPEC sockets
         struct other_socket_event_t socket_event = {.pid = pid, .uid = uid, .af = address_family};
         socket_event.ts_us = bpf_ktime_get_ns() / 1000;
         bpf_get_current_comm(&socket_event.task, sizeof(socket_event.task));
