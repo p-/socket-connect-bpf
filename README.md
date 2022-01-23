@@ -34,14 +34,14 @@ The socket-connect-bpf Go code is licensed under the Apache License. The BPF cod
 
 ## Requirements
 * x64 CPU (Arm64 support is currently incubating)
-* Recent Linux Kernel: 4.15 or later
+* Recent Linux Kernel: 4.18 or later
 * [Go](https://golang.org/)
 
 
 ## Installation
 
 ### Install Binaries (Version 0.4.0 or later)
-Instructions tested on Ubuntu 20.04 with Linux Kernel 5.11.
+Instructions tested on Ubuntu 20.04 with Linux Kernel 5.13.
 
 * Extract `socket-connect-bpf-x.y.tar.gz` (Version 0.4.0 or later) a [release](https://github.com/p-/socket-connect-bpf/releases).
 
@@ -50,7 +50,7 @@ Tarballs and can be verified with [minisign](https://github.com/jedisct1/minisig
 RWRUqB/iFRENms4B2LbOrNGizwXbStkIPE8sUq01r63cXJP8kzHp+ITv
 
 ### Build code from repository
-Step-by-Step instructions for Ubuntu 20.04 with Linux Kernel 5.11.
+Step-by-Step instructions for Ubuntu 20.04 with Linux Kernel 5.13.
 
     # Install Go 1.17 or later (if not already installed)
     sudo snap install --classic go
