@@ -4,7 +4,6 @@
 #include "bpf_helpers.h"
 #include "bpf_tracing.h"
 #include "bpf_endian.h"
-#include "bpf_core_read.h"
 
 #define TASK_COMM_LEN 16
 #define AF_UNIX 1
@@ -66,7 +65,7 @@ int kprobe_security_socket_connect(struct pt_regs *ctx) {
     struct sockaddr *address = (struct sockaddr *)(ctx)->rsi;
 
     u16 address_family = 0;
-    bpf_core_read(&address_family, sizeof(address_family), &address->sa_family);
+    bpf_probe_read(&address_family, sizeof(address_family), &address->sa_family);
 
     if (address_family == AF_INET) {
         struct ipv4_event_t data4 = {.pid = pid, .uid = uid, .af = address_family};
@@ -74,10 +73,10 @@ int kprobe_security_socket_connect(struct pt_regs *ctx) {
 
         struct sockaddr_in *daddr = (struct sockaddr_in *)address;
 
-        bpf_core_read(&data4.daddr, sizeof(data4.daddr), &daddr->sin_addr.s_addr);
+        bpf_probe_read(&data4.daddr, sizeof(data4.daddr), &daddr->sin_addr.s_addr);
 
         u16 dport = 0;
-        bpf_core_read(&dport, sizeof(dport), &daddr->sin_port);
+        bpf_probe_read(&dport, sizeof(dport), &daddr->sin_port);
         data4.dport = bpf_ntohs(dport);
 
         bpf_get_current_comm(&data4.task, sizeof(data4.task));
@@ -92,10 +91,10 @@ int kprobe_security_socket_connect(struct pt_regs *ctx) {
 
         struct sockaddr_in6 *daddr6 = (struct sockaddr_in6 *)address;
 
-        bpf_core_read(&data6.daddr, sizeof(data6.daddr), &daddr6->sin6_addr.in6_u.u6_addr32);
+        bpf_probe_read(&data6.daddr, sizeof(data6.daddr), &daddr6->sin6_addr.in6_u.u6_addr32);
 
         u16 dport6 = 0;
-        bpf_core_read(&dport6, sizeof(dport6), &daddr6->sin6_port);
+        bpf_probe_read(&dport6, sizeof(dport6), &daddr6->sin6_port);
         data6.dport = bpf_ntohs(dport6);
 
         bpf_get_current_comm(&data6.task, sizeof(data6.task));
