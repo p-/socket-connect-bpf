@@ -1,6 +1,6 @@
 // +build ignore
 
-#include "compact_vmlinux.h"
+#include "vmlinux.h"
 #include "bpf_helpers.h"
 #include "bpf_tracing.h"
 #include "bpf_endian.h"
@@ -62,7 +62,7 @@ int kprobe_security_socket_connect(struct pt_regs *ctx) {
 
     u32 uid = bpf_get_current_uid_gid();
 
-    struct sockaddr *address = (struct sockaddr *)(ctx)->rsi;
+    struct sockaddr *address = (struct sockaddr *)PT_REGS_PARM2(ctx);
 
     u16 address_family = 0;
     bpf_probe_read(&address_family, sizeof(address_family), &address->sa_family);

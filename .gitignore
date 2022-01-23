@@ -3,5 +3,5 @@ TODO.md
 
 # generated files
 *.o
-bpf_bpfeb.go
-bpf_bpfel.go
+bpf_bpfeb*.go
+bpf_bpfel*.go

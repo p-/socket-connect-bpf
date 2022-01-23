@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Version of libbpf to fetch headers from
-LIBBPF_VERSION=0.4.0
+LIBBPF_VERSION=0.6.1
 
 # The headers we want
 prefix=libbpf-"$LIBBPF_VERSION"
