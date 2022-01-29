@@ -1,6 +1,6 @@
 // +build ignore
 
-#include "vmlinux.h"
+#include "compact_vmlinux.h"
 #include "bpf_helpers.h"
 #include "bpf_tracing.h"
 #include "bpf_endian.h"
