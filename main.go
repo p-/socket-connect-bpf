@@ -40,7 +40,7 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-//go:generate go run github.com/cilium/ebpf/cmd/bpf2go -cc clang-12 -cflags "-O2 -g -Wall -Werror" -target amd64 bpf securitySocketConnectSrc.c -- -Iheaders/
+//go:generate go run github.com/cilium/ebpf/cmd/bpf2go -cc clang-12 -cflags "-O2 -g -Wall -Werror" -target amd64,arm64 bpf securitySocketConnectSrc.c -- -Iheaders/
 
 var out output
 

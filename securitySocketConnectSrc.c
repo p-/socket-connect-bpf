@@ -1,6 +1,11 @@
 // +build ignore
 
-#include "compact_vmlinux.h"
+#if defined(__TARGET_ARCH_arm64)
+#include "compact_vmlinux_arm64.h"
+#elif defined(__TARGET_ARCH_x86)
+#include "compact_vmlinux_amd64.h"
+#endif
+
 #include "bpf_helpers.h"
 #include "bpf_tracing.h"
 #include "bpf_endian.h"
