@@ -16,29 +16,26 @@ jobs:
     - name: Check out code into the Go module directory
       uses: actions/checkout@v2
 
-    - name: Generate BPF Sources
-      run: go generate
-
-    - name: Execute Tests
-      run: go test ./...
-      
-    - name: Build
-      run: go build -v .
+    - name: Make all (go generate, build + test)
+      run: make all
 
     - name: Update AS Data
       run: ./updateASData.sh
 
     - name: Smoke Test
-      run: sudo timeout --preserve-status --signal=INT 10s ./socket-connect-bpf -a
+      run: sudo timeout --preserve-status --signal=INT 10s ./bin/amd64/socket-connect-bpf -a
 
     - name: Create Build Artifact
       run: |
-        mkdir -p dist/as
-        mv ./socket-connect-bpf dist/
-        mv ./README.md dist/
-        mv as/ip2asn-v4-u32.tsv dist/as/
+        mkdir -p bin/amd64/as
+        mkdir -p bin/arm64/as
+        cp ./README.md bin/amd64/
+        cp ./README.md bin/arm64/
+        cp as/ip2asn-v4-u32.tsv bin/amd64/as/
+        cp as/ip2asn-v4-u32.tsv bin/arm64/as/
         mkdir artifacts
-        tar czf artifacts/socket-connect-bpf-linux-x64.tar.gz --directory=dist/ .
+        tar czf artifacts/socket-connect-bpf-linux-amd64.tar.gz --directory=bin/amd64/ .
+        tar czf artifacts/socket-connect-bpf-linux-arm64.tar.gz --directory=bin/arm64/ .
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v2

@@ -1,5 +1,6 @@
 socket-connect-bpf
 TODO.md
+bin/**/socket-connect-bpf
 
 # generated files
 *.o
