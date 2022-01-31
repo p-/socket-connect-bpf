@@ -32,10 +32,9 @@ You might want to try `socket-connect-bpf` for the following use cases:
 ## License
 The socket-connect-bpf Go code is licensed under the Apache License. The BPF code is licensed under GPL as some [BPF-helpers are GPL-only](https://github.com/iovisor/bcc/blob/master/docs/kernel-versions.md#helpers).
 
-## Requirements
+## System requirements
 * x64/amd64 or AArch64/arm64 CPU
-* Recent Linux Kernel: 4.18 or later
-* [Go](https://golang.org/) 1.17 or later
+* Linux Kernel: 4.18 or later
 
 ## Installation
 
@@ -79,7 +78,6 @@ To update the AS data used while developing run:
     ./updateASData.sh
 
 ## Development
-
 
 ### Build code from repository
 Step-by-Step instructions for Ubuntu 20.04 with Linux Kernel 5.13.
