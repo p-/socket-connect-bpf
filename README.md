@@ -18,7 +18,7 @@ Following information about each request is displayed if possible:
 | PID           | Process ID of the process making the request.            | `8549`             |
 | Process       | Process path/args of the process making the request.     | `/usr/bin/curl`    |
 | User          | Username under which the process is executed.            | `root`             |
-| Destination   | IP address and port of the destination.                  | `127.0.0.53:53`    |
+| Destination   | IP address and port of the destination.                  | `127.0.0.1 53`     |
 | AS-Info       | Info about the autonomous system (AS) of the IP address. | `AS36459 (GITHUB)` |
 
 ## Use cases
@@ -33,38 +33,26 @@ You might want to try `socket-connect-bpf` for the following use cases:
 The socket-connect-bpf Go code is licensed under the Apache License. The BPF code is licensed under GPL as some [BPF-helpers are GPL-only](https://github.com/iovisor/bcc/blob/master/docs/kernel-versions.md#helpers).
 
 ## Requirements
-* x64 CPU (Arm64 support is currently incubating)
+* x64/amd64 or AArch64/arm64 CPU
 * Recent Linux Kernel: 4.18 or later
-* [Go](https://golang.org/)
-
+* [Go](https://golang.org/) 1.17 or later
 
 ## Installation
 
-### Install Binaries (Version 0.4.0 or later)
-Instructions tested on Ubuntu 20.04 with Linux Kernel 5.13.
+### Install binaries (Version 0.4.0 or later)
+Tested on following architecures:
 
-* Extract `socket-connect-bpf-x.y.tar.gz` (Version 0.4.0 or later) a [release](https://github.com/p-/socket-connect-bpf/releases).
+* amd64 (Intel x64 CPU)
+* arm64 (AWS Graviton2/Arm Neoverse-N1)
 
+Instructions tested on Ubuntu 20.04 with Linux Kernel 5.13:
+
+* Extract the corresponding `socket-connect-bpf-*.tar.gz` [release](https://github.com/p-/socket-connect-bpf/releases).
+
+### Verify binaries (Version 0.4.0 or later)
 Tarballs and can be verified with [minisign](https://github.com/jedisct1/minisign) and following public key:
 
-RWRUqB/iFRENms4B2LbOrNGizwXbStkIPE8sUq01r63cXJP8kzHp+ITv
-
-### Build code from repository
-Step-by-Step instructions for Ubuntu 20.04 with Linux Kernel 5.13.
-
-    # Install Go 1.17 or later (if not already installed)
-    sudo snap install --classic go
-
-    # Install Clang 12 (for compiling the BPF sources)
-    sudo apt install clang-12
-
-    # Change into a folder of your choice and clone socket-connect-bpf
-    git clone https://github.com/p-/socket-connect-bpf.git
-
-    cd socket-connect-bpf
-    
-    go generate
-    go build
+`RWRUqB/iFRENms4B2LbOrNGizwXbStkIPE8sUq01r63cXJP8kzHp+ITv`
 
 ## Running:
 
@@ -91,6 +79,24 @@ To update the AS data used while developing run:
     ./updateASData.sh
 
 ## Development
+
+
+### Build code from repository
+Step-by-Step instructions for Ubuntu 20.04 with Linux Kernel 5.13.
+
+    # Install Go 1.17 or later (if not already installed)
+    sudo snap install --classic go
+
+    # Install Clang 12 (for compiling the BPF sources)
+    sudo apt install clang-12
+
+    # Change into a folder of your choice and clone socket-connect-bpf
+    git clone https://github.com/p-/socket-connect-bpf.git
+
+    cd socket-connect-bpf
+    
+    go generate
+    go build
 
 ### Tests
 Run tests:

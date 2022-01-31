@@ -36,7 +36,7 @@ func (t tableOutput) PrintHeader() {
 
 func (t tableOutput) PrintLine(e eventPayload) {
 	time := e.GoTime.Format("15:04:05")
-	dest := e.DestIP.String() + ":" + strconv.Itoa(int(e.DestPort))
+	dest := e.DestIP.String() + " " + strconv.Itoa(int(e.DestPort))
 
 	var header string
 	var args []interface{}
