@@ -48,7 +48,7 @@ func ParseASNumbers(asTsvFile string) {
 		binary.BigEndian.PutUint32(bs, uint32(startAddr))
 
 		endAddr, _ := strconv.ParseUint(each[1], 10, 32) // Could be cast to uint32
-		asNumber, _ := strconv.Atoi(each[2])
+		asNumber, _ := strconv.ParseUint(each[2], 10, 32)
 
 		if asNumber != 0 {
 			asName := getNameOnly(each[4])
