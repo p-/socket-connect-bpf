@@ -38,7 +38,7 @@ jobs:
         tar czf artifacts/socket-connect-bpf-linux-arm64.tar.gz --directory=bin/arm64/ .
 
     - name: Upload Artifact
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: socket-connect-bpf
         path: artifacts
