@@ -40,7 +40,7 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-//go:generate go run github.com/cilium/ebpf/cmd/bpf2go -cc clang-12 -cflags "-O2 -g -Wall -Werror" -target amd64,arm64 bpf securitySocketConnectSrc.c -- -Iheaders/
+//go:generate go run github.com/cilium/ebpf/cmd/bpf2go -cc clang-16 -cflags "-O2 -g -Wall -Werror" -target amd64,arm64 bpf securitySocketConnectSrc.c -- -Iheaders/
 
 var out output
 
@@ -76,7 +76,7 @@ func setupWorkers() {
 	}
 	defer objs.Close()
 
-	kp, err := link.Kprobe(fn, objs.KprobeSecuritySocketConnect)
+	kp, err := link.Kprobe(fn, objs.KprobeSecuritySocketConnect, nil)
 	if err != nil {
 		log.Fatalf("opening kprobe: %s", err)
 	}

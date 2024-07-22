@@ -44,7 +44,7 @@ Tested on following architecures:
 * amd64 (Intel x64 CPU)
 * arm64 (AWS Graviton2/Arm Neoverse-N1)
 
-Instructions tested on Ubuntu 20.04 with Linux Kernel 5.13:
+Instructions tested on Debian Bookworm with Linux Kernel 6.5:
 
 * Extract the corresponding `socket-connect-bpf-*.tar.gz` [release](https://github.com/p-/socket-connect-bpf/releases).
 
@@ -80,13 +80,13 @@ To update the AS data used while developing run:
 ## Development
 
 ### Build code from repository
-Step-by-Step instructions for Ubuntu 20.04 with Linux Kernel 5.13.
+Step-by-Step instructions for Debian Bookworm with Linux Kernel 6.5.0.
 
-    # Install Go 1.17 or later (if not already installed)
+    # Install Go 1.22 or later (if not already installed)
     sudo snap install --classic go
 
-    # Install Clang 12 (for compiling the BPF sources)
-    sudo apt install clang-12
+    # Install Clang 16 (for compiling the BPF sources)
+    sudo apt install clang-16
 
     # Change into a folder of your choice and clone socket-connect-bpf
     git clone https://github.com/p-/socket-connect-bpf.git
