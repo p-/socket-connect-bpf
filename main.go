@@ -53,7 +53,7 @@ func setupOutput() {
 	printAll := flag.Bool("a", false, "print all (AS numbers and process arguments in output")
 	flag.Parse()
 	if *printAll {
-		as.ParseASNumbers("./as/ip2asn-v4-u32.tsv")
+		as.ParseASNumbersIPv4("./as/ip2asn-v4-u32.tsv")
 	}
 	out = newOutput(*printAll)
 }
@@ -171,7 +171,7 @@ func readIP4Events(rd *perf.Reader) bool {
 	eventPayload := newGenericEventPayload(&event.Event)
 	eventPayload.DestIP = conv.ToIP4(event.Daddr)
 	eventPayload.DestPort = event.Dport
-	eventPayload.ASInfo = as.GetASInfo(eventPayload.DestIP)
+	eventPayload.ASInfo = as.GetASInfoIPv4(eventPayload.DestIP)
 	out.PrintLine(eventPayload)
 	return true
 }

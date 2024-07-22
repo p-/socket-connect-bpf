@@ -15,7 +15,7 @@ import (
 var asMap = make(map[uint8][]ASInfo)
 
 // ParseASNumbers parses the autonomous system (AS) Numbers and IP ranges from a .tsv file
-func ParseASNumbers(asTsvFile string) {
+func ParseASNumbersIPv4(asTsvFile string) {
 	csvFile, err := os.Open(asTsvFile)
 
 	if err != nil {
@@ -76,7 +76,7 @@ func getNameOnly(desc string) string {
 }
 
 // GetASInfo returns information about an autonomous system (AS) of which the given IP is part of.
-func GetASInfo(ip net.IP) ASInfo {
+func GetASInfoIPv4(ip net.IP) ASInfo {
 	ipAddr := conv.ToUint(ip)
 	bs := make([]byte, 4)
 	binary.BigEndian.PutUint32(bs, ipAddr)
