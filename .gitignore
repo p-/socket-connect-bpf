@@ -6,3 +6,5 @@ bin/**/socket-connect-bpf
 *.o
 bpf_*_bpfeb.go
 bpf_*_bpfel.go
+
+*.tsv
