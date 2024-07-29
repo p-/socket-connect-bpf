@@ -54,6 +54,7 @@ func setupOutput() {
 	flag.Parse()
 	if *printAll {
 		as.ParseASNumbersIPv4("./as/ip2asn-v4-u32.tsv")
+		as.ParseASNumbersIPv6("./as/ip2asn-v6.tsv")
 	}
 	out = newOutput(*printAll)
 }
@@ -171,7 +172,8 @@ func readIP4Events(rd *perf.Reader) bool {
 	eventPayload := newGenericEventPayload(&event.Event)
 	eventPayload.DestIP = conv.ToIP4(event.Daddr)
 	eventPayload.DestPort = event.Dport
-	eventPayload.ASInfo = as.GetASInfoIPv4(eventPayload.DestIP)
+	asInfo := as.GetASInfoIPv4(eventPayload.DestIP)
+	eventPayload.ASNameInfo = ASNameInfo{Name: asInfo.Name, AsNumber: asInfo.AsNumber}
 	out.PrintLine(eventPayload)
 	return true
 }
@@ -200,6 +202,8 @@ func readIP6Events(rd *perf.Reader) bool {
 	eventPayload := newGenericEventPayload(&event.Event)
 	eventPayload.DestIP = conv.ToIP6(event.Daddr1, event.Daddr2)
 	eventPayload.DestPort = event.Dport
+	asInfo := as.GetASInfoIPv6(eventPayload.DestIP)
+	eventPayload.ASNameInfo = ASNameInfo{Name: asInfo.Name, AsNumber: asInfo.AsNumber}
 	out.PrintLine(eventPayload)
 	return true
 }
@@ -294,5 +298,11 @@ type eventPayload struct {
 	Host          string
 	DestIP        net.IP
 	DestPort      uint16
-	ASInfo        as.ASInfo
+	ASNameInfo    ASNameInfo
+}
+
+// ASNameInfo contains the name and number of an autonomous system (AS)
+type ASNameInfo struct {
+	AsNumber uint32
+	Name     string
 }

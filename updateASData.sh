@@ -5,7 +5,7 @@ cd as/
 download_and_unzip () {
    filename=$1
     wget https://iptoasn.com/data/$filename.gz
-    rm $filename
+    rm -f $filename
     gunzip $filename.gz
 }
 

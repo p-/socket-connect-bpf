@@ -14,7 +14,7 @@ import (
 
 var asMap = make(map[uint8][]ASInfo)
 
-// ParseASNumbers parses the autonomous system (AS) Numbers and IP ranges from a .tsv file
+// ParseASNumbersIPv4 parses the autonomous system (AS) Numbers and IPv4 ranges from a .tsv file
 func ParseASNumbersIPv4(asTsvFile string) {
 	csvFile, err := os.Open(asTsvFile)
 

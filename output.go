@@ -3,8 +3,6 @@ package main
 import (
 	"fmt"
 	"strconv"
-
-	"github.com/p-/socket-connect-bpf/as"
 )
 
 type output interface {
@@ -43,8 +41,8 @@ func (t tableOutput) PrintLine(e eventPayload) {
 
 	if t.printAll {
 		var asText = ""
-		if (as.ASInfo{}) != e.ASInfo {
-			asText = "AS" + strconv.Itoa(int(e.ASInfo.AsNumber)) + " (" + e.ASInfo.Name + ")"
+		if (ASNameInfo{}) != e.ASNameInfo {
+			asText = "AS" + strconv.Itoa(int(e.ASNameInfo.AsNumber)) + " (" + e.ASNameInfo.Name + ")"
 		}
 		header = "%-9s %-9s %-6d %-42s %-16s %-20s %s\n"
 		args = []interface{}{time, e.AddressFamily, e.Pid, e.ProcessPath + " " + e.ProcessArgs, e.User, dest, asText}
