@@ -34,8 +34,8 @@ jobs:
         cp as/*.tsv bin/amd64/as/
         cp as/*.tsv bin/arm64/as/
         mkdir artifacts
-        tar czf artifacts/socket-connect-bpf-linux-amd64.tar.gz --directory=bin/amd64/ .
-        tar czf artifacts/socket-connect-bpf-linux-arm64.tar.gz --directory=bin/arm64/ .
+        tar czf artifacts/socket-connect-bpf-linux-amd64.tar.gz --exclude '.*' --directory=bin/amd64/ .
+        tar czf artifacts/socket-connect-bpf-linux-arm64.tar.gz --exclude '.*' --directory=bin/arm64/ .
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
