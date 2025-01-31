@@ -4,7 +4,9 @@ all: build test
  
 build:
 	go generate
+	mkdir bin/amd64/
 	GOOS=linux GOARCH=amd64 go build -o bin/amd64/${BINARY_NAME}
+	mkdir bin/arm64/
 	GOOS=linux GOARCH=arm64 go build -o bin/arm64/${BINARY_NAME}
  
 test:
