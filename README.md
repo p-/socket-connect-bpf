@@ -82,7 +82,7 @@ To update the AS data used while developing run:
 ### Build code from repository
 Step-by-Step instructions for Debian Bookworm with Linux Kernel 6.5.0.
 
-    # Install Go 1.22 or later (if not already installed)
+    # Install Go 1.23 or later (if not already installed)
     sudo snap install --classic go
 
     # Install Clang 16 (for compiling the BPF sources)
