@@ -140,8 +140,10 @@ func setupWorkers() {
 	})()
 
 	go (func() {
-		if !readOtherEvents(rdOther) {
-			return
+		for {
+			if !readOtherEvents(rdOther) {
+				return
+			}
 		}
 	})()
 
