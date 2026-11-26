@@ -1,6 +1,6 @@
 module github.com/p-/socket-connect-bpf
 
-go 1.23
+go 1.26
 
 require (
 	github.com/cilium/ebpf v0.17.2
