@@ -42,7 +42,7 @@ func (t tableOutput) PrintLine(e eventPayload) {
 	if t.printAll {
 		var asText = ""
 		if (ASNameInfo{}) != e.ASNameInfo {
-			asText = "AS" + strconv.Itoa(int(e.ASNameInfo.AsNumber)) + " (" + e.ASNameInfo.Name + ")"
+			asText = "AS" + strconv.FormatUint(uint64(e.ASNameInfo.AsNumber), 10) + " (" + e.ASNameInfo.Name + ")"
 		}
 		header = "%-9s %-9s %-6d %-42s %-16s %-20s %s\n"
 		args = []interface{}{time, e.AddressFamily, e.Pid, e.ProcessPath + " " + e.ProcessArgs, e.User, dest, asText}
