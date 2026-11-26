@@ -64,6 +64,7 @@ func setupWorkers() {
 
 	stopper := make(chan os.Signal, 1)
 	signal.Notify(stopper, os.Interrupt, syscall.SIGTERM)
+	defer signal.Stop(stopper)
 
 	// Allow the current process to lock memory for eBPF resources.
 	if err := rlimit.RemoveMemlock(); err != nil {
@@ -87,41 +88,21 @@ func setupWorkers() {
 	if err != nil {
 		log.Fatalf("creating perf event reader: %s", err)
 	}
-	defer rd4.Close()
+	defer closePerfReader(rd4)
 
 	rd6, err := perf.NewReader(objs.Ipv6Events, os.Getpagesize())
 	if err != nil {
 		log.Fatalf("creating perf event reader: %s", err)
 	}
-	defer rd6.Close()
+	defer closePerfReader(rd6)
 
 	rdOther, err := perf.NewReader(objs.OtherSocketEvents, os.Getpagesize())
 	if err != nil {
 		log.Fatalf("creating perf event reader: %s", err)
 	}
-	defer rdOther.Close()
-
-	go func() {
-		<-stopper
-		log.Println("Received signal, exiting program..")
-
-		if err := rd4.Close(); err != nil {
-			log.Fatalf("closing perf event reader: %s", err)
-		}
-
-		if err := rd6.Close(); err != nil {
-			log.Fatalf("closing perf event reader: %s", err)
-		}
-
-		if err := rdOther.Close(); err != nil {
-			log.Fatalf("closing perf event reader: %s", err)
-		}
-	}()
+	defer closePerfReader(rdOther)
 
 	out.PrintHeader()
-
-	sig := make(chan os.Signal, 1)
-	signal.Notify(sig, os.Interrupt, os.Kill)
 
 	go (func() {
 		for {
@@ -147,7 +128,14 @@ func setupWorkers() {
 		}
 	})()
 
-	<-sig
+	<-stopper
+	log.Println("Received signal, exiting program..")
+}
+
+func closePerfReader(rd *perf.Reader) {
+	if err := rd.Close(); err != nil {
+		log.Printf("closing perf event reader: %s", err)
+	}
 }
 
 func readIP4Events(rd *perf.Reader) bool {
