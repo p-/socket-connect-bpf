@@ -28,7 +28,7 @@ jobs:
     - name: Smoke Test
       run: |
         for sig in INT TERM; do
-          sudo timeout --preserve-status --signal="$sig" --kill-after=5s 10s ./bin/amd64/socket-connect-bpf -a || exit $?
+          sudo timeout --foreground --verbose --preserve-status --signal="$sig" --kill-after=5s 10s ./bin/amd64/socket-connect-bpf -a || exit $?
         done
 
     - name: Create Build Artifact
