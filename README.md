@@ -80,21 +80,22 @@ To update the AS data used while developing run:
 ## Development
 
 ### Build code from repository
-Step-by-Step instructions for Debian Bookworm with Linux Kernel 6.5.0.
 
-    # Install Go 1.26 or later (if not already installed)
-    sudo snap install --classic go
 
-    # Install Clang and LLVM 19 to compile and strip the BPF objects
-    sudo apt install clang-19 llvm-19
+Variants:
+A.) Start this repo's [Codespace](https://github.com/features/codespaces).
+B.) Or Build locally:
 
-    # Change into a folder of your choice and clone socket-connect-bpf
-    git clone https://github.com/p-/socket-connect-bpf.git
+    1. Install Go 1.26
+    2. Install clang-19 and llvm-19
+    3. Change into a folder of your choice and clone socket-connect-bpf
+        git clone https://github.com/p-/socket-connect-bpf.git
 
+    4. Change into directory
     cd socket-connect-bpf
     
-    go generate
-    go build
+    5. Call make build (it will generate the required files and build the project into the bin/ folder)
+    make build
 
 ### Tests
 Run tests:
