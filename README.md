@@ -85,8 +85,8 @@ Step-by-Step instructions for Debian Bookworm with Linux Kernel 6.5.0.
     # Install Go 1.26 or later (if not already installed)
     sudo snap install --classic go
 
-    # Install Clang 16 (for compiling the BPF sources)
-    sudo apt install clang-16
+    # Install Clang and LLVM 19 to compile and strip the BPF objects
+    sudo apt install clang-19 llvm-19
 
     # Change into a folder of your choice and clone socket-connect-bpf
     git clone https://github.com/p-/socket-connect-bpf.git

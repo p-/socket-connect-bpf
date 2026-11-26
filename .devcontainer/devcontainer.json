@@ -9,7 +9,7 @@
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	// "forwardPorts": [],
 	// Use 'postCreateCommand' to run commands after the container is created.
-	"postCreateCommand": "sudo apt update && sudo apt install -y clang-19",
+	"postCreateCommand": "sudo apt update && sudo apt install -y clang-19 llvm-19",
 	"runArgs": ["--privileged"],
 	// Configure tool-specific properties.
 	"customizations": {
