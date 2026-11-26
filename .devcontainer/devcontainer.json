@@ -3,13 +3,13 @@
 {
 	"name": "Go",
 	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
-	"image": "mcr.microsoft.com/devcontainers/go:1-1-bookworm",
+	"image": "mcr.microsoft.com/devcontainers/go:dev-1.26-trixie",
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	// "features": {},
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	// "forwardPorts": [],
 	// Use 'postCreateCommand' to run commands after the container is created.
-	"postCreateCommand": "sudo apt update && sudo apt install -y clang-16",
+	"postCreateCommand": "sudo apt update && sudo apt install -y clang-19",
 	"runArgs": ["--privileged"],
 	// Configure tool-specific properties.
 	"customizations": {
