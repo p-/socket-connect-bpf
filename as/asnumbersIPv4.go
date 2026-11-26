@@ -12,7 +12,7 @@ import (
 	"github.com/p-/socket-connect-bpf/conv"
 )
 
-var asMap = make(map[uint8][]ASInfo)
+var ipv4Buckets [256][]ASInfo
 
 // ParseASNumbersIPv4 parses the autonomous system (AS) Numbers and IPv4 ranges from a .tsv file
 func ParseASNumbersIPv4(asTsvFile string) {
@@ -44,22 +44,14 @@ func ParseASNumbersIPv4(asTsvFile string) {
 
 		startAddr, _ := strconv.ParseUint(each[0], 10, 32) // Could be cast to uint32
 
-		bs := make([]byte, 4)
-		binary.BigEndian.PutUint32(bs, uint32(startAddr))
-
 		endAddr, _ := strconv.ParseUint(each[1], 10, 32) // Could be cast to uint32
 		asNumber, _ := strconv.ParseUint(each[2], 10, 32)
 
 		if asNumber != 0 {
 			asName := getNameOnly(each[4])
-			bucket := bs[0]
 			entry := ASInfo{StartIP: uint32(startAddr), EndIP: uint32(endAddr), AsNumber: uint32(asNumber), Name: asName}
-			val, ok := asMap[bucket]
-
-			if !ok {
-				asMap[bucket] = []ASInfo{entry}
-			} else {
-				asMap[bucket] = append(val, entry)
+			for bucket := entry.StartIP >> 24; bucket <= entry.EndIP>>24; bucket++ {
+				ipv4Buckets[bucket] = append(ipv4Buckets[bucket], entry)
 			}
 		}
 	}
@@ -78,11 +70,7 @@ func getNameOnly(desc string) string {
 // GetASInfo returns information about an autonomous system (AS) of which the given IP is part of.
 func GetASInfoIPv4(ip net.IP) ASInfo {
 	ipAddr := conv.ToUint(ip)
-	bs := make([]byte, 4)
-	binary.BigEndian.PutUint32(bs, ipAddr)
-	bucket := bs[0]
-	values := asMap[bucket]
-	for _, asInfo := range values {
+	for _, asInfo := range ipv4Buckets[ipAddr>>24] {
 		inRange := checkRange(&asInfo, ipAddr)
 		if inRange {
 			return asInfo
