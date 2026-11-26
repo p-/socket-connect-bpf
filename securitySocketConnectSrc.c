@@ -17,6 +17,7 @@
 #define AF_UNSPEC 0
 #define AF_INET 2
 #define AF_INET6 10
+#define SOCKADDR_LEN_THROUGH(type, field) ((int)(offsetof(type, field) + sizeof(((type *)0)->field)))
 
 struct ipv4_event_t {
     u64 ts_us;
@@ -70,9 +71,13 @@ int kprobe_security_socket_connect(struct pt_regs *ctx) {
     u32 uid = bpf_get_current_uid_gid();
 
     struct sockaddr *address = (struct sockaddr *)PT_REGS_PARM2(ctx);
+    int addrlen = (int)PT_REGS_PARM3(ctx);
 
     u16 address_family = 0;
-    bpf_probe_read(&address_family, sizeof(address_family), &address->sa_family);
+    if (addrlen < SOCKADDR_LEN_THROUGH(struct sockaddr, sa_family) ||
+        bpf_probe_read(&address_family, sizeof(address_family), &address->sa_family) != 0) {
+        return 0;
+    }
 
     if (address_family == AF_INET) {
         struct ipv4_event_t data4 = {.pid = pid, .uid = uid, .af = address_family};
@@ -80,10 +85,12 @@ int kprobe_security_socket_connect(struct pt_regs *ctx) {
 
         struct sockaddr_in *daddr = (struct sockaddr_in *)address;
 
-        bpf_probe_read(&data4.daddr, sizeof(data4.daddr), &daddr->sin_addr.s_addr);
-
         u16 dport = 0;
-        bpf_probe_read(&dport, sizeof(dport), &daddr->sin_port);
+        if (addrlen < SOCKADDR_LEN_THROUGH(struct sockaddr_in, sin_addr) ||
+            bpf_probe_read(&data4.daddr, sizeof(data4.daddr), &daddr->sin_addr.s_addr) != 0 ||
+            bpf_probe_read(&dport, sizeof(dport), &daddr->sin_port) != 0) {
+            return 0;
+        }
         data4.dport = bpf_ntohs(dport);
 
         bpf_get_current_comm(&data4.task, sizeof(data4.task));
@@ -98,10 +105,12 @@ int kprobe_security_socket_connect(struct pt_regs *ctx) {
 
         struct sockaddr_in6 *daddr6 = (struct sockaddr_in6 *)address;
 
-        bpf_probe_read(&data6.daddr, sizeof(data6.daddr), &daddr6->sin6_addr.in6_u.u6_addr32);
-
         u16 dport6 = 0;
-        bpf_probe_read(&dport6, sizeof(dport6), &daddr6->sin6_port);
+        if (addrlen < SOCKADDR_LEN_THROUGH(struct sockaddr_in6, sin6_addr) ||
+            bpf_probe_read(&data6.daddr, sizeof(data6.daddr), &daddr6->sin6_addr.in6_u.u6_addr32) != 0 ||
+            bpf_probe_read(&dport6, sizeof(dport6), &daddr6->sin6_port) != 0) {
+            return 0;
+        }
         data6.dport = bpf_ntohs(dport6);
 
         bpf_get_current_comm(&data6.task, sizeof(data6.task));
