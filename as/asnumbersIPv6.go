@@ -26,8 +26,8 @@ func ParseASNumbersIPv6(asTsvFile string) {
 
 	scanner := bufio.NewScanner(csvFile)
 	for scanner.Scan() {
-		fields := strings.Fields(scanner.Text())
-		if len(fields) != 5 {
+		fields := strings.Split(scanner.Text(), "\t")
+		if len(fields) != 5 || strings.TrimSpace(fields[4]) == "" {
 			continue // Skip invalid lines
 		}
 
@@ -43,7 +43,7 @@ func ParseASNumbersIPv6(asTsvFile string) {
 			StartIP:  start,
 			EndIP:    end,
 			AsNumber: uint32(asNumber),
-			Name:     fields[4],
+			Name:     getNameOnly(fields[4]),
 		})
 	}
 
